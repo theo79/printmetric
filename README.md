@@ -1,129 +1,118 @@
-PrintMetric
-Know your real print cost.
+# PrintMetric  
+### Know your real print cost.
 
-PrintMetric is a lightweight browser-based tool for accurately calculating the real cost of a 3D print.
+PrintMetric is a lightweight, browser-based tool for accurately calculating the real cost of a 3D print.
 
 It helps makers, small print shops, and hobbyists stop guessing and start pricing properly.
 
-No login. No subscriptions. Just transparent cost calculation.
+No login. No subscriptions. No tracking. Just transparent cost calculation.
 
-What PrintMetric Does
+---
 
-PrintMetric calculates your total print cost based on:
+## What PrintMetric Does
 
-Filament usage (grams)
+PrintMetric calculates total print cost based on:
 
-Filament price per kg
+- Filament usage (grams)
+- Filament price per kg
+- Electricity consumption (kWh)
+- Machine wear
+- Hands-on labor
+- Profit margin
+- Quantity
 
-Electricity consumption
+It provides a clear cost breakdown including:
 
-Machine wear
+- Filament cost  
+- Energy used (kWh)  
+- Electricity cost  
+- Labor cost  
+- Wear cost  
+- Subtotal  
+- Profit amount  
+- Final total (per print)  
+- Grand total (based on quantity)  
 
-Hands-on labor
+---
 
-Profit margin
-
-Quantity
-
-It provides a full cost breakdown including:
-
-Filament cost
-
-Energy used (kWh)
-
-Electricity cost
-
-Labor cost
-
-Wear cost
-
-Subtotal
-
-Profit amount
-
-Final price (per print)
-
-Grand total (based on quantity)
-
-G-code Support
+## G-code Support
 
 Upload a G-code file and PrintMetric will:
 
-Detect print time
-
-Detect filament usage
-
-Convert filament length to grams automatically (if needed)
+- Detect print time  
+- Detect filament usage  
+- Convert filament length to grams automatically (when needed)  
 
 Compatible with common slicers.
 
-Manual inputs are always respected.
+Manual inputs are always respected and never overwritten unexpectedly.
 
-Quote Features
+---
 
-Add customer name
+## Quote Features
 
-Add job / part name
+- Add customer name
+- Add job / part name
+- Add notes
+- Export a clean, print-ready PDF quote
 
-Add notes
+No UI clutter appears in the exported document.
 
-Export a clean, print-ready PDF quote
+---
 
-No UI clutter in the exported file.
-
-Profiles
+## Profiles
 
 Save and load pricing presets for:
 
-Filament cost
+- Filament price
+- Electricity rate
+- Labor rate
+- Margin
+- Printer power
+- Minimum price
 
-Electricity rate
+Switch between materials or machines instantly.
 
-Labor rate
+---
 
-Margin
-
-Printer power
-
-Switch between different materials or machines instantly.
-
-Why PrintMetric Exists
+## Why PrintMetric Exists
 
 Many makers underprice their prints because they forget:
 
-Electricity
-
-Machine wear
-
-Labor
-
-Failed prints
+- Electricity
+- Machine wear
+- Labor
+- Failed prints
 
 PrintMetric makes those costs visible.
 
 Transparent pricing builds sustainable making.
 
-Live Version
+---
+
+## Live Version
 
 Hosted via GitHub Pages:
 https://theo79.github.io/printmetric/
 
+(Replace `yourusername` with your GitHub username.)
 
-Tech Stack
+---
 
-Vanilla HTML
+## Tech Stack
 
-CSS
+- Vanilla HTML  
+- CSS  
+- JavaScript  
+- No backend  
+- No external dependencies  
 
-JavaScript
+---
 
-No backend
+## Author
 
-No tracking
-
-No dependencies
-
-Author
-
-Built by Theocharis.
+Built by Theocharis.  
 Engineer. Maker. Tool builder.
+
+---
+
