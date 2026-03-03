@@ -94,9 +94,6 @@ Transparent pricing builds sustainable making.
 
 Hosted via GitHub Pages:
 https://theo79.github.io/printmetric/
-
-(Replace `yourusername` with your GitHub username.)
-
 ---
 
 ## Tech Stack
