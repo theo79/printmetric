@@ -232,9 +232,7 @@ A GitHub star helps other makers discover the project and supports its continued
 
 **https://github.com/theo79/printmetric**
 
-If PrintMetric saved you from underpricing a print, consider buying me a coffee ☕
 
----
 
 ## Feedback & Contributions
 
