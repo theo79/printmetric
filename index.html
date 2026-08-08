@@ -28,8 +28,9 @@
         </select>
         <small class="hint">Selecting a printer will auto-fill the average power.</small>
         <div class="inline-group">
-          <label for="avgPower" class="label-sm">Average power (W)</label>
-          <input id="avgPower" class="input" type="number" step="1" min="0" placeholder="—" readonly />
+          <label for="avgPower" class="label-sm">Average power (W) — estimated</label>
+          <input id="avgPower" class="input" type="number" step="1" min="0" placeholder="—" />
+          <small class="hint">Preset is a typical estimate. For best accuracy, enter your printer's measured average power.</small>
         </div>
       </div>
 
@@ -97,6 +98,13 @@
     <section class="row">
       <div class="card">
         <label class="label">Filament Cost (per kg) [€ / $]</label>
+        <div class="inline-group">
+          <label for="materialType" class="label-sm">Material</label>
+          <select id="materialType" class="input">
+            <option value="">Select material…</option>
+          </select>
+          <small class="hint">Preset density is approximate. Use your filament manufacturer's value for best accuracy.</small>
+        </div>
         <input id="filamentCostPerKg" class="input" type="number" step="0.01" min="0" placeholder="e.g., 22.50" />
       </div>
       <div class="card">
@@ -140,6 +148,12 @@
         <small class="hint">Default is 20%. Adjust as needed.</small>
 
         <div class="inline-group">
+          <label class="label-sm" for="failureWasteAllowance">Failure / Waste Allowance (%)</label>
+          <input id="failureWasteAllowance" class="input" type="number" step="1" min="0" value="0" />
+          <small class="hint">Covers expected losses from failed prints, wasted material, energy and machine use.</small>
+        </div>
+
+        <div class="inline-group">
           <label class="label-sm" for="quantity">Quantity</label>
           <input id="quantity" class="input" type="number" step="1" min="1" value="1" />
         </div>
@@ -158,10 +172,10 @@
       <div class="card centered buttons-card">
         <div class="buttons-wrap">
           <button id="btnCalculate" class="btn-accent" type="button">Calculate</button>
-          <button id="btnExportPdf" class="btn-outline" type="button">Export to PDF</button>
+          <button id="btnExportPdf" class="btn-outline" type="button">Customer Quote PDF</button>
           <button id="btnCopySummary" class="btn-outline" type="button">Copy quote summary</button>
         </div>
-        <small class="hint">Calculates total price with margin. Exports a print-ready PDF.</small>
+        <small class="hint">Calculates total price with margin. Exports a customer quote PDF.</small>
       </div>
     </section>
 
@@ -190,6 +204,8 @@
           <div class="breakdown-row"><span>Labor</span><strong id="outLaborCost">—</strong></div>
           <div class="breakdown-row"><span>Wear</span><strong id="outWearCost">—</strong></div>
           <div class="breakdown-row"><span>Subtotal</span><strong id="outSubtotalCost">—</strong></div>
+          <div class="breakdown-row"><span>Failure / waste allowance</span><strong id="outFailureWasteAllowance">—</strong></div>
+          <div class="breakdown-row"><span>Adjusted cost</span><strong id="outAdjustedCost">—</strong></div>
           <div class="breakdown-row"><span>Profit (margin amount)</span><strong id="outProfitCost">—</strong></div>
           <div class="breakdown-row"><span>Final total (per print)</span><strong id="outFinalCost">—</strong></div>
           <div class="breakdown-row"><span>Quantity</span><strong id="outQuantity">—</strong></div>
@@ -204,6 +220,12 @@
     <div class="donate-note" id="donateNote" role="status" aria-live="polite" hidden>
       If PrintMetric saved you from underpricing, consider supporting development.
     </div>
+
+    <div class="support-callout">
+      <span>Like PrintMetric? <a href="https://github.com/theo79/printmetric" target="_blank" rel="noopener">⭐ Star it on GitHub</a> — it helps others discover the project.</span>
+    </div>
+
+    <div class="support-label">Support development</div>
 
     <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" aria-label="Support on Ko-fi">
       <!-- Ko-fi cup SVG (no text) -->
@@ -243,42 +265,52 @@
 
     <div class="ps-line"></div>
 
-    <div class="ps-totals">
-      <div class="ps-row"><span>EUR (€)</span><strong id="psTotalEUR">—</strong></div>
-      <div class="ps-row"><span>USD ($)</span><strong id="psTotalUSD">—</strong></div>
-      <div class="ps-row"><span></span><small id="psMinPriceNote">—</small></div>
-    </div>
-
-    <div class="ps-breakdown">
-      <div class="ps-row"><span>Filament</span><strong id="psFilamentCost">—</strong></div>
-      <div class="ps-row"><span>Energy used</span><strong id="psEnergyKwh">—</strong></div>
-      <div class="ps-row"><span>Electricity</span><strong id="psElectricityCost">—</strong></div>
-      <div class="ps-row"><span>Labor</span><strong id="psLaborCost">—</strong></div>
-      <div class="ps-row"><span>Wear</span><strong id="psWearCost">—</strong></div>
-      <div class="ps-row"><span>Subtotal</span><strong id="psSubtotalCost">—</strong></div>
-      <div class="ps-row"><span>Profit</span><strong id="psProfitCost">—</strong></div>
-      <div class="ps-row"><span>Final total (per print)</span><strong id="psFinalCost">—</strong></div>
-      <div class="ps-row"><span>Quantity</span><strong id="psQuantity">—</strong></div>
-      <div class="ps-row"><span>Grand total</span><strong id="psGrandTotal">—</strong></div>
-    </div>
-
-    <div class="ps-info">
-      <div><span>Printer type:</span> <strong id="psPrinter">—</strong></div>
-      <div><span>Filament used:</span> <strong id="psFilament">—</strong></div>
-      <div><span>Print time:</span> <strong id="psTime">—</strong></div>
-    </div>
-
-    <div id="psQuoteBlock" class="ps-quote" hidden>
-      <div class="ps-quote-title">Quote details</div>
-      <div id="psCustomerRow" class="ps-row" hidden><span>Customer:</span> <strong id="psCustomerName"></strong></div>
-      <div id="psJobRow" class="ps-row" hidden><span>Job:</span> <strong id="psJobName"></strong></div>
-      <div id="psNotesRow" class="ps-quote-notes" hidden>
-        <span>Notes:</span>
+    <div id="psQuoteBlock" class="ps-customer-block" hidden>
+      <div class="ps-section-title">Customer</div>
+      <div id="psCustomerRow" class="ps-detail-row" hidden>
+        <span>Customer</span>
+        <strong id="psCustomerName">—</strong>
+      </div>
+      <div id="psJobRow" class="ps-detail-row" hidden>
+        <span>Job / Part</span>
+        <strong id="psJobName">—</strong>
+      </div>
+      <div id="psNotesRow" class="ps-notes-box" hidden>
+        <span class="ps-section-title">Notes</span>
         <div id="psQuoteNotes"></div>
       </div>
     </div>
 
-    <p class="ps-note">FX is indicative and may differ from your payment processor.</p>
+    <div class="ps-section">
+      <div class="ps-section-title">Production information</div>
+      <div class="ps-detail-row"><span>Material</span><strong id="psMaterial">—</strong></div>
+      <div class="ps-detail-row"><span>Printer</span><strong id="psPrinter">—</strong></div>
+      <div class="ps-detail-row"><span>Quantity</span><strong id="psQuantity">—</strong></div>
+      <div class="ps-detail-row"><span>Estimated print time per unit</span><strong id="psTime">—</strong></div>
+    </div>
+
+    <div class="ps-pricing">
+      <div class="ps-price-row ps-price-row-secondary">
+        <span>Unit Price</span>
+        <div class="ps-price-stack">
+          <strong id="psUnitPriceEUR">—</strong>
+          <small id="psUnitPriceUSD">—</small>
+        </div>
+      </div>
+      <div class="ps-price-row ps-price-row-primary">
+        <span>Total Price</span>
+        <div class="ps-price-stack">
+          <strong id="psTotalEUR">—</strong>
+          <small id="psTotalUSD">—</small>
+        </div>
+      </div>
+      <div id="psMinPriceNote" class="ps-min-price-note">—</div>
+    </div>
+
+    <div class="ps-footer-note">
+      <div>Quote generated with PrintMetric</div>
+      <div>Know your real print cost.</div>
+    </div>
   </section>
 
   <!-- Scripts -->

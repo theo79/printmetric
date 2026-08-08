@@ -1,14 +1,44 @@
+// Approximate average printing power consumption values for cost estimates only.
+// These are not maximum PSU ratings; actual consumption varies with bed temperature, nozzle temperature, material, ambient conditions, and printer settings.
 const PRINTERS = [
-  { name: "Creality Ender-3 (V2/Neo)", powerW: 120 },
-  { name: "Prusa i3 MK3S+", powerW: 100 },
-  { name: "Prusa MINI+", powerW: 80 },
-  { name: "Anycubic Kobra", powerW: 120 },
-  { name: "Creality CR-10", powerW: 150 },
+  { name: "Bambu Lab A1 Mini", powerW: 90 },
+  { name: "Bambu Lab A1", powerW: 180 },
   { name: "Bambu Lab P1P", powerW: 250 },
+  { name: "Bambu Lab P1S", powerW: 270 },
   { name: "Bambu Lab X1 Carbon", powerW: 300 },
-  { name: "Anycubic i3 Mega", powerW: 120 },
+  { name: "Prusa MINI+", powerW: 80 },
+  { name: "Prusa MK3S+", powerW: 100 },
+  { name: "Prusa MK4S", powerW: 140 },
+  { name: "Prusa CORE One", powerW: 180 },
+  { name: "Creality Ender-3 V2 / Neo", powerW: 120 },
+  { name: "Creality Ender-3 V3 SE", powerW: 150 },
+  { name: "Creality Ender-3 V3 KE", powerW: 180 },
+  { name: "Creality K1", powerW: 220 },
+  { name: "Creality K1C", powerW: 230 },
+  { name: "Creality K1 Max", powerW: 290 },
+  { name: "Creality CR-10", powerW: 150 },
+  { name: "Elegoo Neptune 3", powerW: 120 },
+  { name: "Elegoo Neptune 4", powerW: 180 },
+  { name: "Elegoo Neptune 4 Pro", powerW: 220 },
+  { name: "Elegoo Neptune 4 Plus", powerW: 260 },
+  { name: "Elegoo Neptune 4 Max", powerW: 290 },
+  { name: "Anycubic Kobra", powerW: 120 },
+  { name: "Anycubic Kobra 2", powerW: 150 },
+  { name: "Anycubic Kobra 2 Pro", powerW: 190 },
+  { name: "Anycubic Kobra 3", powerW: 220 },
   { name: "Artillery Sidewinder X1", powerW: 200 },
-  { name: "Elegoo Neptune 3", powerW: 120 }
+  { name: "Artillery Sidewinder X2", powerW: 230 }
+];
+
+const MATERIAL_PRESETS = [
+  { value: "pla", label: "PLA", density: 1.24 },
+  { value: "petg", label: "PETG", density: 1.27 },
+  { value: "abs", label: "ABS", density: 1.04 },
+  { value: "asa", label: "ASA", density: 1.07 },
+  { value: "tpu", label: "TPU", density: 1.21 },
+  { value: "nylon", label: "Nylon (PA)", density: 1.14 },
+  { value: "pc", label: "PC", density: 1.20 },
+  { value: "custom", label: "Other / Custom", density: null }
 ];
 
 function $(id) {
@@ -81,8 +111,11 @@ const PROFILE_FIELD_IDS = [
   "handsOnLaborMins",
   "laborCostPerHour",
   "profitMargin",
+  "failureWasteAllowance",
   "avgPower",
   "printerType",
+  "materialType",
+  "filamentDensity",
   "minimumPrice",
   "quantity"
 ];
@@ -96,10 +129,12 @@ const PERSISTED_FIELD_IDS = [
   "handsOnLaborMins",
   "laborCostPerHour",
   "profitMargin",
+  "failureWasteAllowance",
   "quantity",
   "minimumPrice",
   "usdPerEur",
   "avgPower",
+  "materialType",
   "filamentDiameter",
   "filamentDensity",
   "filamentUsedGrams",
@@ -133,12 +168,14 @@ function setupPersistence() {
 
 function restorePersistedFields() {
   const printerType = $("printerType");
+  const materialType = $("materialType");
   const usdPerEur = $("usdPerEur");
   try {
     const savedPrinterType = localStorage.getItem(storageKey("printerType"));
+    const savedMaterialType = localStorage.getItem(storageKey("materialType"));
 
     PERSISTED_FIELD_IDS.forEach((id) => {
-      if (id === "printerType") return;
+      if (id === "printerType" || id === "materialType") return;
 
       const el = $(id);
       if (!el) return;
@@ -148,6 +185,14 @@ function restorePersistedFields() {
         el.value = savedValue;
       }
     });
+
+    if (savedMaterialType != null && materialType) {
+      materialType.value = savedMaterialType;
+      materialType.dispatchEvent(new Event("change"));
+    } else if (materialType && !materialType.value) {
+      materialType.value = "pla";
+      materialType.dispatchEvent(new Event("change"));
+    }
 
     if (savedPrinterType != null && printerType) {
       printerType.value = savedPrinterType;
@@ -245,12 +290,19 @@ function applyProfile(profileObj) {
   });
 
   const printerTypeEl = $("printerType");
+  const materialTypeEl = $("materialType");
   const avgPowerEl = $("avgPower");
 
   if (printerTypeEl && profileObj.printerType != null) {
     printerTypeEl.value = profileObj.printerType;
     printerTypeEl.dispatchEvent(new Event("change"));
     persistFieldValue("printerType");
+  }
+
+  if (materialTypeEl && profileObj.materialType != null) {
+    materialTypeEl.value = profileObj.materialType;
+    materialTypeEl.dispatchEvent(new Event("change"));
+    persistFieldValue("materialType");
   }
 
   if (avgPowerEl) {
@@ -280,6 +332,55 @@ function captureCurrentProfile() {
   }
 
   return profile;
+}
+
+function populateMaterials() {
+  const sel = $("materialType");
+  if (!sel) return;
+
+  sel.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Select material…";
+  placeholder.selected = true;
+  sel.appendChild(placeholder);
+
+  MATERIAL_PRESETS.forEach((material) => {
+    const opt = document.createElement("option");
+    opt.value = material.value;
+    opt.textContent = material.label;
+    sel.appendChild(opt);
+  });
+
+  const saved = localStorage.getItem(storageKey("materialType"));
+  if (saved && [...sel.options].some((option) => option.value === saved)) {
+    sel.value = saved;
+  } else {
+    sel.value = "pla";
+  }
+}
+
+function setupMaterialChange() {
+  const materialType = $("materialType");
+  const density = $("filamentDensity");
+  if (!materialType || !density) return;
+
+  materialType.addEventListener("change", (e) => {
+    const val = e.target.value;
+    if (val === "" || val === "custom") {
+      persistFieldValue("materialType");
+      return;
+    }
+
+    const preset = MATERIAL_PRESETS.find((material) => material.value === val);
+    if (preset && preset.density != null) {
+      density.value = String(preset.density);
+      persistFieldValue("filamentDensity");
+    }
+
+    persistFieldValue("materialType");
+  });
 }
 
 function setupProfiles() {
@@ -371,7 +472,7 @@ function populatePrinters() {
   sel.appendChild(oth);
 
   $("avgPower").value = "";
-  $("avgPower").readOnly = true;
+  $("avgPower").readOnly = false;
 }
 
 function setupPrinterChange() {
@@ -379,16 +480,16 @@ function setupPrinterChange() {
     const val = e.target.value;
     const avgPower = $("avgPower");
 
+    avgPower.readOnly = false;
+
     if (val === "" || val === undefined) {
       avgPower.value = "";
-      avgPower.readOnly = true;
       persistFieldValue("avgPower");
       persistFieldValue("printerType");
       return;
     }
 
     if (val === "other") {
-      avgPower.readOnly = false;
       if (!avgPower.value) avgPower.focus();
       persistFieldValue("printerType");
       return;
@@ -398,10 +499,8 @@ function setupPrinterChange() {
     const p = PRINTERS[idx];
     if (p) {
       avgPower.value = p.powerW;
-      avgPower.readOnly = true;
     } else {
       avgPower.value = "";
-      avgPower.readOnly = true;
     }
 
     persistFieldValue("avgPower");
@@ -512,6 +611,7 @@ function calculateTotalsEUR(skipZeroWarning = false) {
   const laborMins = num("handsOnLaborMins");
   const laborPerHour = num("laborCostPerHour");
   const marginPct = num("profitMargin");
+  const failureWastePct = num("failureWasteAllowance");
   const quantity = Math.max(1, num("quantity"));
   const minimumPrice = Math.max(0, num("minimumPrice"));
 
@@ -529,8 +629,10 @@ function calculateTotalsEUR(skipZeroWarning = false) {
   const wearCost = wear;
 
   const subtotal = filamentCost + electricityCost + laborCost + wearCost;
-  const profitAmount = subtotal * (marginPct / 100);
-  const finalTotalSingle = subtotal + profitAmount;
+  const failureAllowanceAmount = subtotal * (failureWastePct / 100);
+  const adjustedCost = subtotal + failureAllowanceAmount;
+  const profitAmount = adjustedCost * (marginPct / 100);
+  const finalTotalSingle = adjustedCost + profitAmount;
   const finalTotal = finalTotalSingle * quantity;
 
   return {
@@ -540,6 +642,8 @@ function calculateTotalsEUR(skipZeroWarning = false) {
     laborCost,
     wearCost,
     subtotal,
+    failureAllowanceAmount,
+    adjustedCost,
     profitAmount,
     quantity,
     minimumPrice,
@@ -560,6 +664,8 @@ function clearOutputs() {
   setText("outLaborCost", "—");
   setText("outWearCost", "—");
   setText("outSubtotalCost", "—");
+  setText("outFailureWasteAllowance", "—");
+  setText("outAdjustedCost", "—");
   setText("outProfitCost", "—");
   setText("outFinalCost", "—");
   setText("outQuantity", "—");
@@ -577,18 +683,14 @@ function clearOutputs() {
   });
 
   setText("psTotalEUR", "—");
+  setText("psUnitPriceEUR", "—");
   setText("psTotalUSD", "—");
-  setText("psMinPriceNote", "");
-  setText("psFilamentCost", "—");
-  setText("psEnergyKwh", "—");
-  setText("psElectricityCost", "—");
-  setText("psLaborCost", "—");
-  setText("psWearCost", "—");
-  setText("psSubtotalCost", "—");
-  setText("psProfitCost", "—");
-  setText("psFinalCost", "—");
+  setText("psUnitPriceUSD", "—");
+  setText("psMaterial", "—");
+  setText("psPrinter", "—");
   setText("psQuantity", "—");
-  setText("psGrandTotal", "—");
+  setText("psTime", "—");
+  setText("psMinPriceNote", "");
 }
 
 function setBreakdownOutputsEUR(breakdown) {
@@ -598,21 +700,12 @@ function setBreakdownOutputsEUR(breakdown) {
   setText("outLaborCost", `€ ${fmtMoney(breakdown.laborCost)}`);
   setText("outWearCost", `€ ${fmtMoney(breakdown.wearCost)}`);
   setText("outSubtotalCost", `€ ${fmtMoney(breakdown.subtotal)}`);
+  setText("outFailureWasteAllowance", `€ ${fmtMoney(breakdown.failureAllowanceAmount)}`);
+  setText("outAdjustedCost", `€ ${fmtMoney(breakdown.adjustedCost)}`);
   setText("outProfitCost", `€ ${fmtMoney(breakdown.profitAmount)}`);
   setText("outFinalCost", `€ ${fmtMoney(breakdown.finalTotalSingle)}`);
   setText("outQuantity", `${breakdown.quantity}`);
   animateMoneyText("outGrandTotal", "€ ", breakdown.finalTotal);
-
-  setText("psFilamentCost", `€ ${fmtMoney(breakdown.filamentCost)}`);
-  setText("psEnergyKwh", `${fmtMoney(breakdown.energyKwh)} kWh`);
-  setText("psElectricityCost", `€ ${fmtMoney(breakdown.electricityCost)}`);
-  setText("psLaborCost", `€ ${fmtMoney(breakdown.laborCost)}`);
-  setText("psWearCost", `€ ${fmtMoney(breakdown.wearCost)}`);
-  setText("psSubtotalCost", `€ ${fmtMoney(breakdown.subtotal)}`);
-  setText("psProfitCost", `€ ${fmtMoney(breakdown.profitAmount)}`);
-  setText("psFinalCost", `€ ${fmtMoney(breakdown.finalTotalSingle)}`);
-  setText("psQuantity", `${breakdown.quantity}`);
-  setText("psGrandTotal", `€ ${fmtMoney(breakdown.finalTotal)}`);
 }
 
 function syncPrintQuoteDetails() {
@@ -769,21 +862,32 @@ function onExportPdf() {
     if (!proceed) return;
   }
 
+  const quantity = Math.max(1, Number($("quantity")?.value || 1));
+  const displayedTotalEUR = Number.parseFloat($("outTotalEUR")?.dataset?.animValue || $("outTotalEUR")?.textContent?.replace(/[^0-9.\-]/g, "") || "0");
+  const displayedUnitEUR = Number.isFinite(displayedTotalEUR) && quantity > 0 ? displayedTotalEUR / quantity : 0;
+  const fxRate = Number($("usdPerEur")?.value);
+
   $("psTotalEUR").textContent = $("outTotalEUR").textContent || "—";
-  $("psTotalUSD").textContent = $("outTotalUSD").textContent || "—";
+  $("psUnitPriceEUR").textContent = `€ ${fmtMoney(displayedUnitEUR)}`;
   $("psMinPriceNote").textContent = $("outMinPriceNote").textContent || "";
 
+  if (Number.isFinite(fxRate) && fxRate > 0) {
+    $("psTotalUSD").textContent = `$ ${fmtMoney(displayedTotalEUR * fxRate)}`;
+    $("psUnitPriceUSD").textContent = `$ ${fmtMoney(displayedUnitEUR * fxRate)}`;
+  } else {
+    $("psTotalUSD").textContent = "—";
+    $("psUnitPriceUSD").textContent = "—";
+  }
+
+  $("psMaterial").textContent = $("materialType").selectedOptions[0]?.textContent || "—";
   $("psPrinter").textContent = $("printerType").selectedOptions[0]?.textContent || "—";
-  $("psFilament").textContent = $("filamentUsedGrams").value
-    ? `${$("filamentUsedGrams").value} g`
-    : "—";
+  $("psQuantity").textContent = String(quantity);
   $("psTime").textContent = $("printTimeHours").value
     ? `${$("printTimeHours").value} h`
     : "—";
 
   syncPrintQuoteDetails();
-
-  $("psTimestamp").textContent = `Generated: ${new Date().toLocaleString()}`;
+  $("psTimestamp").textContent = new Date().toLocaleString();
 
   window.print();
 }
@@ -890,6 +994,8 @@ function setupCalculate() {
 function boot() {
   populatePrinters();
   setupPrinterChange();
+  populateMaterials();
+  setupMaterialChange();
   setupGcodeUpload();
   setupProfiles();
   setupCalculate();
