@@ -7,7 +7,6 @@ It helps makers, small print shops, and hobbyists stop guessing and start pricin
 
 No login. No subscriptions. No tracking. Just transparent cost calculation.
 
----
 
 ## What PrintMetric Does
 
@@ -33,7 +32,6 @@ It provides a clear cost breakdown including:
 - Final total (per print)  
 - Grand total (based on quantity)  
 
----
 
 ## G-code Support
 
@@ -47,7 +45,6 @@ Compatible with common slicers.
 
 Manual inputs are always respected and never overwritten unexpectedly.
 
----
 
 ## Quote Features
 
@@ -58,7 +55,6 @@ Manual inputs are always respected and never overwritten unexpectedly.
 
 No UI clutter appears in the exported document.
 
----
 
 ## Profiles
 
@@ -73,7 +69,6 @@ Save and load pricing presets for:
 
 Switch between materials or machines instantly.
 
----
 
 ## Why PrintMetric Exists
 
@@ -88,13 +83,10 @@ PrintMetric makes those costs visible.
 
 Transparent pricing builds sustainable making.
 
----
-
 ## Live Version
 
 Hosted via GitHub Pages:
 https://theo79.github.io/printmetric/
----
 
 ## Tech Stack
 
@@ -104,7 +96,11 @@ https://theo79.github.io/printmetric/
 - No backend  
 - No external dependencies  
 
----
+## Support PrintMetric
+
+If PrintMetric helped you calculate your print costs or price your projects more accurately, consider giving the repository a ⭐ **star**.
+
+It helps more makers discover the project and supports its continued development.
 
 ## Author
 
