@@ -124,11 +124,6 @@ const PROFILE_FIELD_IDS = [
 ];
 const PERSISTED_FIELD_IDS = [
   ...CUSTOMER_JOB_FIELD_IDS,
-  "sellerBusinessName",
-  "sellerContactDetails",
-  "quoteNumber",
-  "quoteDate",
-  "quoteValidUntil",
   "filamentCostPerKg",
   "electricityCost",
   "machineWearCost",
@@ -213,13 +208,6 @@ function restorePersistedFields() {
     // Fail silently when storage is unavailable.
   }
 
-  const quoteDate = $("quoteDate");
-  if (quoteDate && !quoteDate.value) {
-    const now = new Date();
-    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
-    quoteDate.value = localDate.toISOString().slice(0, 10);
-    persistFieldValue("quoteDate");
-  }
 }
 
 function clearCustomerJobData() {
@@ -472,7 +460,7 @@ function setupProfiles() {
 
     refreshProfileSelect();
     select.value = name;
-    onCalculate();
+    onCalculate({ skipZeroWarning: true });
   });
 
   deleteBtn.addEventListener("click", () => {
@@ -617,7 +605,7 @@ function updateEstimatedFilamentFromImportedLength({ updateCalculation = true } 
   setGcodeImportStatus({ grams, source: "estimated" });
 
   if (updateCalculation) {
-    onCalculate();
+    onCalculate({ skipZeroWarning: true });
   }
 
   return grams;
@@ -693,7 +681,7 @@ function validateAndParseGcode(file) {
     });
 
     if (didUpdate) {
-      onCalculate();
+      onCalculate({ skipZeroWarning: true });
     }
   }).catch((err) => {
     console.error("G-code parse error:", err);
@@ -704,7 +692,6 @@ function validateAndParseGcode(file) {
 function setupGcodeUpload() {
   $("gcodeFile").addEventListener("change", (e) => {
     const file = e.target.files?.[0];
-    setText("gcodeFileName", file?.name || "No file selected");
     if (!file) return;
     validateAndParseGcode(file);
   });
@@ -727,7 +714,7 @@ function setupGcodeUpload() {
   });
 }
 
-function calculateTotalsEUR() {
+function calculateTotalsEUR(skipZeroWarning = false) {
   return PRICING.calculatePricing(getPricingFormInput());
 }
 
@@ -831,7 +818,6 @@ function clearOutputs() {
   setText("outMinPriceNote", "");
 
   setText("outFilamentCost", "—");
-  setText("outProductionCost", "—");
   setText("outEnergyKwh", "—");
   setText("outElectricityCost", "—");
   setText("outSetupLaborCost", "—");
@@ -870,10 +856,6 @@ function clearOutputs() {
 }
 
 function setBreakdownOutputsEUR(breakdown) {
-  const productionCost = breakdown.filamentCostTotal
-    + breakdown.electricityCostTotal
-    + breakdown.wearCostTotal;
-  setText("outProductionCost", `€ ${fmtMoney(productionCost)}`);
   setText("outFilamentCost", `€ ${fmtMoney(breakdown.filamentCostTotal)}`);
   setText("outEnergyKwh", `${fmtMoney(breakdown.energyKwhTotal)} kWh`);
   setText("outElectricityCost", `€ ${fmtMoney(breakdown.electricityCostTotal)}`);
@@ -891,74 +873,22 @@ function setBreakdownOutputsEUR(breakdown) {
 }
 
 function syncPrintQuoteDetails() {
-  const sellerName = ($("sellerBusinessName")?.value || "").trim();
-  const sellerContact = ($("sellerContactDetails")?.value || "").trim();
-  const quoteNumber = ($("quoteNumber")?.value || "").trim();
-  const quoteDate = ($("quoteDate")?.value || "").trim();
-  const validUntil = ($("quoteValidUntil")?.value || "").trim();
   const customerName = ($("customerName")?.value || "").trim();
   const jobName = ($("jobName")?.value || "").trim();
   const quoteNotes = ($("quoteNotes")?.value || "").trim();
 
-  setText("psSellerName", sellerName);
-  setText("psSellerContact", sellerContact);
-  setText("psQuoteNumber", quoteNumber);
-  setText("psQuoteDate", formatQuoteDate(quoteDate));
-  setText("psValidUntil", formatQuoteDate(validUntil));
   setText("psCustomerName", customerName);
   setText("psJobName", jobName);
   setText("psQuoteNotes", quoteNotes);
 
-  const hasSeller = sellerName.length > 0 || sellerContact.length > 0;
-  const hasQuoteNumber = quoteNumber.length > 0;
-  const hasQuoteDate = quoteDate.length > 0;
-  const hasValidUntil = validUntil.length > 0;
   const hasCustomer = customerName.length > 0;
   const hasJob = jobName.length > 0;
   const hasNotes = quoteNotes.length > 0;
 
-  if ($("psSellerBlock")) $("psSellerBlock").hidden = !hasSeller;
-  if ($("psQuoteNumberRow")) $("psQuoteNumberRow").hidden = !hasQuoteNumber;
-  if ($("psQuoteDateRow")) $("psQuoteDateRow").hidden = !hasQuoteDate;
-  if ($("psValidUntilRow")) $("psValidUntilRow").hidden = !hasValidUntil;
-  if ($("psQuoteMetaBlock")) $("psQuoteMetaBlock").hidden = !(hasQuoteNumber || hasQuoteDate || hasValidUntil);
   if ($("psCustomerRow")) $("psCustomerRow").hidden = !hasCustomer;
   if ($("psJobRow")) $("psJobRow").hidden = !hasJob;
   if ($("psNotesRow")) $("psNotesRow").hidden = !hasNotes;
   if ($("psQuoteBlock")) $("psQuoteBlock").hidden = !(hasCustomer || hasJob || hasNotes);
-}
-
-function formatQuoteDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return value || "";
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString();
-}
-
-function validateQuoteDates({ show = false } = {}) {
-  const quoteDate = $("quoteDate");
-  const validUntil = $("quoteValidUntil");
-  if (!quoteDate || !validUntil) return true;
-
-  const result = QUOTE.validateDateRange(quoteDate.value, validUntil.value);
-  const invalid = !result.valid;
-  const message = validationMessageElement(validUntil);
-  const shouldShow = invalid && (show || validUntil.dataset.validationTouched === "true");
-  validUntil.classList.toggle("input-invalid", shouldShow);
-  validUntil.setAttribute("aria-invalid", shouldShow ? "true" : "false");
-  if (shouldShow) validUntil.setAttribute("aria-describedby", message.id);
-  else validUntil.removeAttribute("aria-describedby");
-  message.textContent = shouldShow ? result.message : "";
-  return !invalid;
-}
-
-function setupQuoteDetails() {
-  ["quoteDate", "quoteValidUntil"].forEach((id) => {
-    $(id)?.addEventListener("input", (event) => {
-      event.currentTarget.dataset.validationTouched = "true";
-      validateQuoteDates();
-      syncPrintQuoteDetails();
-    });
-  });
 }
 
 function showDonateNoteBriefly() {
@@ -981,7 +911,7 @@ function showDonateNoteBriefly() {
 
 // EUR is the base currency. USD conversion uses only the locally entered manual rate.
 function onCalculate(options = {}) {
-  const { showValidation = false } = options;
+  const { skipZeroWarning = false, showValidation = false } = options;
   $("fxStatus").textContent = "";
   $("outMinPriceNote").textContent = "";
   $("psMinPriceNote").textContent = "";
@@ -997,7 +927,7 @@ function onCalculate(options = {}) {
     return;
   }
 
-  const breakdown = calculateTotalsEUR();
+  const breakdown = calculateTotalsEUR(skipZeroWarning);
   if (breakdown == null) {
     clearOutputs();
     return;
@@ -1037,7 +967,7 @@ function setupLiveCalculate() {
   const debouncedCalculate = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
-      onCalculate();
+      onCalculate({ skipZeroWarning: true });
     }, 200);
   };
 
@@ -1053,11 +983,6 @@ function setupLiveCalculate() {
 }
 
 function onExportPdf() {
-  if (!validateQuoteDates({ show: true })) {
-    $("quoteValidUntil")?.focus();
-    return;
-  }
-
   if ($("outTotalEUR").textContent.trim() === "—") {
     const proceed = confirm("You haven't calculated a total yet. Export anyway?");
     if (!proceed) return;
@@ -1090,7 +1015,7 @@ function onExportPdf() {
     : "—";
 
   syncPrintQuoteDetails();
-  $("psTimestamp").textContent = `Generated ${new Date().toLocaleString()}`;
+  $("psTimestamp").textContent = new Date().toLocaleString();
 
   window.print();
 }
@@ -1106,14 +1031,6 @@ function buildQuoteSummaryText() {
   const printTimeH = $("printTimeHours")?.value?.trim() || "";
   const markup = $("profitMargin")?.value?.trim() || "";
   const usdPerEur = $("usdPerEur")?.value?.trim() || "";
-  const sellerName = $("sellerBusinessName")?.value?.trim() || "";
-  const sellerContact = $("sellerContactDetails")?.value?.trim() || "";
-  const quoteNumber = $("quoteNumber")?.value?.trim() || "";
-  const quoteDate = $("quoteDate")?.value?.trim() || "";
-  const validUntil = $("quoteValidUntil")?.value?.trim() || "";
-  const customerName = $("customerName")?.value?.trim() || "";
-  const jobName = $("jobName")?.value?.trim() || "";
-  const quoteNotes = $("quoteNotes")?.value?.trim() || "";
 
   const lines = [
     "PrintMetric",
@@ -1121,15 +1038,6 @@ function buildQuoteSummaryText() {
     `Base total (EUR): ${totalEUR}`,
     `Converted total (USD): ${totalUSD}`
   ];
-
-  if (sellerName) lines.push(`Seller: ${sellerName}`);
-  if (sellerContact) lines.push(`Seller contact: ${sellerContact}`);
-  if (quoteNumber) lines.push(`Quote number: ${quoteNumber}`);
-  if (quoteDate) lines.push(`Quote date: ${formatQuoteDate(quoteDate)}`);
-  if (validUntil) lines.push(`Valid until: ${formatQuoteDate(validUntil)}`);
-  if (customerName) lines.push(`Customer: ${customerName}`);
-  if (jobName) lines.push(`Job / project: ${jobName}`);
-  if (quoteNotes) lines.push(`Notes / terms: ${quoteNotes}`);
 
   if (quantity && quantity !== "—") {
     lines.push(`Quantity: ${quantity}`);
@@ -1183,7 +1091,7 @@ async function copyTextToClipboard(text) {
 
 async function onCopySummary() {
   const btn = $("btnCopySummary");
-  const originalText = btn?.textContent || "Copy internal summary";
+  const originalText = btn?.textContent || "Copy quote summary";
   const summary = buildQuoteSummaryText();
 
   let copied = false;
@@ -1219,12 +1127,11 @@ function boot() {
   setupGcodeUpload();
   setupProfiles();
   setupLocalDataControls();
-  setupQuoteDetails();
   setupCalculate();
   setupLiveCalculate();
   setupPersistence();
   restorePersistedFields();
-  onCalculate();
+  onCalculate({ skipZeroWarning: true });
 }
 
 document.addEventListener("DOMContentLoaded", boot);

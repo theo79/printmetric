@@ -16,8 +16,6 @@ It helps makers, hobbyists, and small print shops move beyond simple filament-co
 
 No installation required — it runs directly in your browser.
 
-![PrintMetric application screenshot](docs/printmetric-screenshot.png)
-
 ---
 
 ## What PrintMetric Calculates
@@ -38,70 +36,6 @@ PrintMetric calculates all monetary inputs and prices in EUR. It can calculate y
 * Minimum order price in EUR
 
 The internal cost breakdown makes it easy to see where your money is actually going before deciding what to charge.
-
-## Pricing formulas
-
-PrintMetric calculates in EUR without rounding intermediate values. Rounding to two decimal places is only applied for display. The print-time, filament, electricity, machine-wear, and per-unit labor inputs describe one printed unit.
-
-Let:
-
-* `G` = filament used per unit in grams
-* `FP` = filament price in EUR per kilogram
-* `H` = print time per unit in hours
-* `W` = average printer power in watts
-* `EP` = electricity price in EUR per kWh
-* `MW` = flat machine-wear cost in EUR per unit
-* `R` = labor rate in EUR per hour
-* `S` = setup labor minutes for the complete order
-* `L` = labor minutes repeated per unit
-* `Q` = quantity, a positive whole number
-* `A` = waste/failure allowance percentage
-* `M` = markup percentage
-* `MIN` = minimum order price in EUR
-
-### Per-unit production costs
-
-```text
-filament cost per unit = (G / 1000) × FP
-
-energy per unit (kWh) = (W / 1000) × H
-electricity cost per unit = energy per unit × EP
-
-machine wear per unit = MW
-
-labor cost per unit = R × (L / 60)
-setup labor cost = R × (S / 60)
-```
-
-Machine wear is a flat per-unit amount; it is not multiplied by print hours. Electricity uses print hours and average printer power.
-
-### Quantity, allowance, markup, and minimum order price
-
-```text
-per-unit subtotal = filament cost + electricity cost + machine wear + labor cost per unit
-
-order subtotal = (per-unit subtotal × Q) + setup labor cost
-
-waste allowance = order subtotal × (A / 100)
-adjusted order cost = order subtotal + waste allowance
-
-markup amount = adjusted order cost × (M / 100)
-calculated order total = adjusted order cost + markup amount
-
-final order total = max(calculated order total, MIN)
-effective unit price = final order total / Q
-```
-
-The waste/failure setting is a practical percentage buffer, not a statistical failure-probability formula. Markup is the percentage added to adjusted cost; it is not gross profit margin. The minimum order price is applied last, after quantity, setup labor, allowance, and markup.
-
-### EUR to USD conversion
-
-```text
-converted USD total = final EUR order total × manually entered USD-per-EUR rate
-converted USD unit price = effective EUR unit price × manually entered USD-per-EUR rate
-```
-
-The exchange rate is manual and is never fetched or updated automatically.
 
 ---
 
@@ -147,7 +81,7 @@ Your actual filament price per kg is always entered manually — because real sp
 
 ---
 
-## Supported G-code and slicers
+## G-code Support
 
 Upload a G-code file and PrintMetric can automatically detect:
 
@@ -163,17 +97,7 @@ G-code imports use bounded `Blob.slice()` reads instead of loading every large f
 
 Files over 2 GiB are rejected before reading as a browser-safety safeguard. These byte limits are configurable in `GCODE.parseFile()` for testing or future tuning. If supported metadata is absent from a large file's sampled sections, the UI explains that manual values are required.
 
-Current compatibility:
-
-| Slicer / format | Time metadata | Filament metadata |
-| --- | --- | --- |
-| Cura | `TIME`, `time_elapsed` | Unit-bearing `Filament used`, optional `Filament weight` |
-| PrusaSlicer / SuperSlicer | Estimated printing time strings | `filament used [mm]`, `[m]`, `[g]`, including lists and totals |
-| OrcaSlicer | Estimated printing time strings | Per-extruder lists and explicit total fields |
-| Bambu Studio | Estimated printing time strings | Total filament length and weight fields |
-| Similar/generic G-code | Numeric time keys when recognized | Explicit unit-bearing filament/material length or weight metadata |
-
-Single- and multi-extruder metadata are supported. Multi-extruder values are retained individually and summed for the current single-material costing workflow.
+Compatible with metadata produced by common slicers.
 
 Manual inputs remain available when metadata is missing or when you want to override an estimate.
 
@@ -280,11 +204,8 @@ PrintMetric can generate a clean, customer-facing quote directly from the browse
 
 The customer quote can include:
 
-* Quote number
-* Quote date and optional valid-until date
-* Seller/business name and contact details
 * Customer name
-* Job / project name
+* Job / part name
 * Material
 * Printer
 * Quantity
@@ -292,7 +213,7 @@ The customer quote can include:
 * Unit price in EUR
 * Total price in EUR
 * An indicative converted USD value using your manual EUR → USD rate
-* Optional notes / terms
+* Notes
 
 Your internal business information stays private.
 
@@ -309,8 +230,6 @@ The customer PDF does **not** expose:
 
 Your customer sees the quote — not how you calculated your markup.
 
-The on-screen **Internal EUR cost breakdown** remains the internal quote view. It can show production costs, waste allowance, machine wear, labor, and markup. None of those internal fields are copied into the customer PDF. VAT, taxes, shipping, and discounts are not calculated or shown.
-
 ---
 
 ## Profiles & Local Storage
@@ -318,14 +237,12 @@ The on-screen **Internal EUR cost breakdown** remains the internal quote view. I
 PrintMetric is local-first. The following values are stored in your browser's `localStorage` so they can be restored on the next visit:
 
 * **Customer/job information:** customer name (`printmetric_customerName`), part/job name (`printmetric_jobName`), and notes (`printmetric_quoteNotes`).
-* **Seller defaults:** business/seller name (`printmetric_sellerBusinessName`) and contact details (`printmetric_sellerContactDetails`).
-* **Quote information:** quote number (`printmetric_quoteNumber`), quote date (`printmetric_quoteDate`), and valid-until date (`printmetric_quoteValidUntil`).
 * **Current pricing values:** filament price, electricity price, machine wear per unit, setup labor time, labor time per unit, labor rate, markup, waste/failure allowance, quantity, and minimum order price.
 * **Current print/material values:** printer, average power, material, filament diameter, material density, filament weight, and print time.
 * **Manual exchange rate:** USD per EUR (`printmetric_usdPerEur`).
 * **Named profiles:** all saved profiles are stored together under `printmetric_profiles`.
 
-The current-value keys use the `printmetric_` prefix followed by their existing field IDs. In addition to the customer/job, seller, quote, and exchange-rate keys listed above, these are:
+The current-value keys use the `printmetric_` prefix followed by their existing field IDs. In addition to the three customer/job keys and exchange-rate key listed above, these are:
 
 ```text
 printmetric_filamentCostPerKg
@@ -347,7 +264,7 @@ printmetric_printTimeHours
 printmetric_printerType
 ```
 
-Each named profile stores reusable filament pricing, electricity, machine wear, setup and per-unit labor, labor rate, markup, waste allowance, printer/power selection, material/density, minimum order price, and quantity. A custom printer profile can also store `otherPowerW`. Profiles do **not** contain seller details, quote metadata, customer names, job names, notes, the manual exchange rate, filament weight, print time, or filament diameter.
+Each named profile stores reusable filament pricing, electricity, machine wear, setup and per-unit labor, labor rate, markup, waste allowance, printer/power selection, material/density, minimum order price, and quantity. A custom printer profile can also store `otherPowerW`. Profiles do **not** contain customer names, job names, notes, the manual exchange rate, filament weight, print time, or filament diameter.
 
 The **Clear customer/job data** button removes only the customer name, job name, and notes. It does not delete pricing settings or profiles. **Reset all local data** removes all keys owned by PrintMetric, including named profiles, and requires confirmation.
 
