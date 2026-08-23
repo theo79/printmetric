@@ -16,25 +16,92 @@ It helps makers, hobbyists, and small print shops move beyond simple filament-co
 
 No installation required — it runs directly in your browser.
 
+![PrintMetric application screenshot](docs/printmetric-screenshot.png)
+
 ---
 
 ## What PrintMetric Calculates
 
-PrintMetric can calculate your print cost using:
+PrintMetric calculates all monetary inputs and prices in EUR. It can calculate your print cost using:
 
 * Filament usage
-* Filament price per kg
+* Filament price in EUR per kg
 * Print time
-* Electricity cost
+* Electricity price in EUR per kWh
 * Printer power consumption
-* Machine wear
-* Hands-on labor
-* Profit margin
-* Failure / waste allowance
+* Machine wear as a flat EUR amount per printed unit
+* Setup labor performed once per order
+* Labor repeated for each unit
+* Markup
+* Waste / failure allowance
 * Quantity
-* Minimum selling price
+* Minimum order price in EUR
 
 The internal cost breakdown makes it easy to see where your money is actually going before deciding what to charge.
+
+## Pricing formulas
+
+PrintMetric calculates in EUR without rounding intermediate values. Rounding to two decimal places is only applied for display. The print-time, filament, electricity, machine-wear, and per-unit labor inputs describe one printed unit.
+
+Let:
+
+* `G` = filament used per unit in grams
+* `FP` = filament price in EUR per kilogram
+* `H` = print time per unit in hours
+* `W` = average printer power in watts
+* `EP` = electricity price in EUR per kWh
+* `MW` = flat machine-wear cost in EUR per unit
+* `R` = labor rate in EUR per hour
+* `S` = setup labor minutes for the complete order
+* `L` = labor minutes repeated per unit
+* `Q` = quantity, a positive whole number
+* `A` = waste/failure allowance percentage
+* `M` = markup percentage
+* `MIN` = minimum order price in EUR
+
+### Per-unit production costs
+
+```text
+filament cost per unit = (G / 1000) × FP
+
+energy per unit (kWh) = (W / 1000) × H
+electricity cost per unit = energy per unit × EP
+
+machine wear per unit = MW
+
+labor cost per unit = R × (L / 60)
+setup labor cost = R × (S / 60)
+```
+
+Machine wear is a flat per-unit amount; it is not multiplied by print hours. Electricity uses print hours and average printer power.
+
+### Quantity, allowance, markup, and minimum order price
+
+```text
+per-unit subtotal = filament cost + electricity cost + machine wear + labor cost per unit
+
+order subtotal = (per-unit subtotal × Q) + setup labor cost
+
+waste allowance = order subtotal × (A / 100)
+adjusted order cost = order subtotal + waste allowance
+
+markup amount = adjusted order cost × (M / 100)
+calculated order total = adjusted order cost + markup amount
+
+final order total = max(calculated order total, MIN)
+effective unit price = final order total / Q
+```
+
+The waste/failure setting is a practical percentage buffer, not a statistical failure-probability formula. Markup is the percentage added to adjusted cost; it is not gross profit margin. The minimum order price is applied last, after quantity, setup labor, allowance, and markup.
+
+### EUR to USD conversion
+
+```text
+converted USD total = final EUR order total × manually entered USD-per-EUR rate
+converted USD unit price = effective EUR unit price × manually entered USD-per-EUR rate
+```
+
+The exchange rate is manual and is never fetched or updated automatically.
 
 ---
 
@@ -80,7 +147,7 @@ Your actual filament price per kg is always entered manually — because real sp
 
 ---
 
-## G-code Support
+## Supported G-code and slicers
 
 Upload a G-code file and PrintMetric can automatically detect:
 
@@ -88,45 +155,118 @@ Upload a G-code file and PrintMetric can automatically detect:
 * Filament usage
 * Filament weight when available
 
-When the G-code provides filament length instead of weight, PrintMetric can calculate the approximate weight using filament diameter and material density.
+When the slicer reports filament weight directly, PrintMetric uses that value. When the G-code provides only filament length, PrintMetric estimates weight using the currently selected filament diameter and material density. Changing either value recalculates a length-derived estimate; it does not replace a weight reported directly by the slicer.
 
-Compatible with metadata produced by common slicers.
+#### Large G-code files
+
+G-code imports use bounded `Blob.slice()` reads instead of loading every large file into memory. PrintMetric first inspects 256 KiB from the beginning and 512 KiB from the end, where slicers commonly store metadata. If required metadata is still incomplete, files up to 16 MiB may receive a full fallback scan. Larger files receive a bounded expanded scan of at most 1 MiB from the beginning and 2 MiB from the end and are never fully loaded.
+
+Files over 2 GiB are rejected before reading as a browser-safety safeguard. These byte limits are configurable in `GCODE.parseFile()` for testing or future tuning. If supported metadata is absent from a large file's sampled sections, the UI explains that manual values are required.
+
+Current compatibility:
+
+| Slicer / format | Time metadata | Filament metadata |
+| --- | --- | --- |
+| Cura | `TIME`, `time_elapsed` | Unit-bearing `Filament used`, optional `Filament weight` |
+| PrusaSlicer / SuperSlicer | Estimated printing time strings | `filament used [mm]`, `[m]`, `[g]`, including lists and totals |
+| OrcaSlicer | Estimated printing time strings | Per-extruder lists and explicit total fields |
+| Bambu Studio | Estimated printing time strings | Total filament length and weight fields |
+| Similar/generic G-code | Numeric time keys when recognized | Explicit unit-bearing filament/material length or weight metadata |
+
+Single- and multi-extruder metadata are supported. Multi-extruder values are retained individually and summed for the current single-material costing workflow.
 
 Manual inputs remain available when metadata is missing or when you want to override an estimate.
 
+### Supported filament metadata
+
+PrintMetric currently recognizes these comment patterns:
+
+* **Cura:** `Filament used: 1.2m` and multi-extruder lists such as `Filament used: 1.2m, 0.35m`; optional `Filament weight = [3.6, 1.1]` values are interpreted as grams.
+* **PrusaSlicer / SuperSlicer:** `filament used [mm]`, `filament used [m]`, `filament used [g]`, and their `total filament used [...]` forms.
+* **OrcaSlicer:** comma-separated `filament used [mm]` and `filament used [g]` lists, plus explicit total fields.
+* **Bambu Studio:** `total filament length [mm]` and `total filament weight [g]` fields using either `:` or `=`.
+* **Generic metadata:** filament or material length values when every value includes an explicit `mm` or `m` unit.
+
+For multi-extruder lists, all valid values are retained and summed for the current single-material cost calculation. If both length and reliable weight metadata are present, slicer-reported weight is used for costing and length is retained only as metadata. Explicit total fields replace rather than add to per-extruder lists, preventing double-counting.
+
 ---
 
-## Failure / Waste Allowance
+## Waste / Failure Allowance
 
 Failed prints cost more than just filament.
 
-PrintMetric includes an optional **Failure / Waste Allowance (%)** to account for expected losses from:
+PrintMetric includes an optional **Waste / Failure Allowance (%)** as a practical contingency for:
 
-* Wasted material
+* Failed prints
+* Purging and test prints
+* Scraps and supports
+* Minor material or process losses
+* Other uncertainty
 * Electricity
 * Machine use
 * Labor
 
-The allowance is treated as part of the real production cost before the profit margin is calculated.
+The default allowance for new users is **5%**. It is calculated as a simple percentage buffer:
 
-Set it to **0%** if you don't want to include a failure allowance.
+```text
+allowance = base production cost × (allowance percentage / 100)
+adjusted cost = base production cost + allowance
+```
+
+All monetary amounts in this formula are EUR.
+
+The allowance is treated as part of the real production cost before markup is calculated. It is not a statistical failure-probability model. Non-negative values are accepted without an arbitrary maximum.
+
+Set it to **0%** if you don't want to include an allowance.
+
+---
+
+## Quantity and Labor
+
+Filament, print energy, electricity, and machine wear are treated as per-unit production costs and multiplied by quantity. This preserves the existing meaning of print time and wear cost as values for one printed item.
+
+Labor uses one shared hourly rate with two time inputs:
+
+* **Setup labor time** is charged once for the complete order.
+* **Labor time per unit** is multiplied by quantity.
+
+```text
+order production subtotal =
+  (per-unit filament + electricity + wear + per-unit labor) × quantity
+  + setup labor
+```
+
+All monetary terms in this formula are EUR. Machine wear is the entered flat EUR amount per unit; it is not an hourly rate.
+
+Quantity must be entered as a positive whole number.
+
+---
+
+## Minimum Order Price
+
+The optional **Minimum Order Price** is a floor for the complete order, not for each unit. PrintMetric calculates the quantity-adjusted production and labor costs, adds setup labor once, applies the allowance and markup, and then compares that calculated order total with the minimum order price.
+
+For example, if 10 units produce a calculated order total of €30 and the minimum order price is €50, the final order total is €50. The customer quote shows a unit equivalent of €5.
+
+Set the minimum order price to **0** to disable it.
 
 ---
 
 ## Cost & Pricing Breakdown
 
-PrintMetric provides an internal breakdown including:
+PrintMetric provides an internal EUR cost breakdown including:
 
-* Filament cost
-* Energy used
-* Electricity cost
-* Labor cost
-* Machine wear
-* Production subtotal
-* Failure / waste allowance
+* Filament cost for the order
+* Energy and electricity for the order
+* Setup labor charged once
+* Per-unit labor across the order
+* Total labor cost
+* Machine wear for the order
+* Production subtotal for the order
+* Waste / failure allowance
 * Adjusted production cost
-* Profit
-* Final price per print
+* Markup amount
+* Effective price per unit
 * Quantity
 * Grand total
 
@@ -140,16 +280,19 @@ PrintMetric can generate a clean, customer-facing quote directly from the browse
 
 The customer quote can include:
 
+* Quote number
+* Quote date and optional valid-until date
+* Seller/business name and contact details
 * Customer name
-* Job / part name
+* Job / project name
 * Material
 * Printer
 * Quantity
 * Estimated print time
-* Unit price
-* Total price
-* EUR and indicative USD pricing
-* Notes
+* Unit price in EUR
+* Total price in EUR
+* An indicative converted USD value using your manual EUR → USD rate
+* Optional notes / terms
 
 Your internal business information stays private.
 
@@ -159,32 +302,64 @@ The customer PDF does **not** expose:
 * Electricity cost
 * Labor cost
 * Machine wear
-* Failure / waste allowance
+* Waste / failure allowance
 * Production subtotal
-* Profit margin
-* Profit amount
+* Markup percentage
+* Markup amount
 
-Your customer sees the quote — not how you calculated your margin.
+Your customer sees the quote — not how you calculated your markup.
+
+The on-screen **Internal EUR cost breakdown** remains the internal quote view. It can show production costs, waste allowance, machine wear, labor, and markup. None of those internal fields are copied into the customer PDF. VAT, taxes, shipping, and discounts are not calculated or shown.
 
 ---
 
 ## Profiles & Local Storage
 
-Save pricing profiles for different printers, materials, or working setups.
+PrintMetric is local-first. The following values are stored in your browser's `localStorage` so they can be restored on the next visit:
 
-Profiles can store settings such as:
+* **Customer/job information:** customer name (`printmetric_customerName`), part/job name (`printmetric_jobName`), and notes (`printmetric_quoteNotes`).
+* **Seller defaults:** business/seller name (`printmetric_sellerBusinessName`) and contact details (`printmetric_sellerContactDetails`).
+* **Quote information:** quote number (`printmetric_quoteNumber`), quote date (`printmetric_quoteDate`), and valid-until date (`printmetric_quoteValidUntil`).
+* **Current pricing values:** filament price, electricity price, machine wear per unit, setup labor time, labor time per unit, labor rate, markup, waste/failure allowance, quantity, and minimum order price.
+* **Current print/material values:** printer, average power, material, filament diameter, material density, filament weight, and print time.
+* **Manual exchange rate:** USD per EUR (`printmetric_usdPerEur`).
+* **Named profiles:** all saved profiles are stored together under `printmetric_profiles`.
 
-* Filament pricing
-* Material
-* Electricity rate
-* Labor rate
-* Profit margin
-* Failure / waste allowance
-* Printer and power settings
-* Minimum price
-* Quantity
+The current-value keys use the `printmetric_` prefix followed by their existing field IDs. In addition to the customer/job, seller, quote, and exchange-rate keys listed above, these are:
 
-PrintMetric also remembers relevant settings locally in your browser.
+```text
+printmetric_filamentCostPerKg
+printmetric_electricityCost
+printmetric_machineWearCost
+printmetric_setupLaborMins
+printmetric_handsOnLaborMins
+printmetric_laborCostPerHour
+printmetric_profitMargin
+printmetric_failureWasteAllowance
+printmetric_quantity
+printmetric_minimumPrice
+printmetric_avgPower
+printmetric_materialType
+printmetric_filamentDiameter
+printmetric_filamentDensity
+printmetric_filamentUsedGrams
+printmetric_printTimeHours
+printmetric_printerType
+```
+
+Each named profile stores reusable filament pricing, electricity, machine wear, setup and per-unit labor, labor rate, markup, waste allowance, printer/power selection, material/density, minimum order price, and quantity. A custom printer profile can also store `otherPowerW`. Profiles do **not** contain seller details, quote metadata, customer names, job names, notes, the manual exchange rate, filament weight, print time, or filament diameter.
+
+The **Clear customer/job data** button removes only the customer name, job name, and notes. It does not delete pricing settings or profiles. **Reset all local data** removes all keys owned by PrintMetric, including named profiles, and requires confirmation.
+
+This data is not sent to a PrintMetric server. PrintMetric has no backend, analytics, or tracking, and its calculations remain local to the browser. External support and repository links are opened only when you choose them.
+
+Existing saved `handsOnLaborMins` values are treated as labor time per unit, matching the previous calculation where that labor was multiplied by quantity. Setup labor is a new field and defaults to zero.
+
+### Numeric input validation
+
+PrintMetric validates numeric fields inline and does not silently replace malformed or negative values with zero. Filament weight and quantity are required; quantity must be a positive whole number. Filament diameter, material density, and the manual EUR-to-USD rate must be greater than zero. Cost, time, power, labor, markup, allowance, and minimum-order inputs accept zero where zero has a meaningful interpretation, but do not accept negative values.
+
+Decimal values such as `12.5`, small values such as `0.01`, and zero-valued optional costs are supported. No arbitrary upper limits are imposed. In particular, the former 100% cap on waste allowance has been removed; unusually large non-negative allowances remain an explicit user choice.
 
 No account or cloud storage is required.
 
@@ -192,9 +367,9 @@ No account or cloud storage is required.
 
 ## 💱 EUR / USD
 
-PrintMetric uses EUR as the primary calculation currency and can display an indicative USD equivalent.
+PrintMetric uses EUR as the base calculation currency for every monetary input, formula, minimum price, and quote total. USD is output-only: it is calculated from the final EUR amount using the manually entered EUR → USD rate.
 
-The EUR → USD rate can be entered manually, keeping the calculator independent from external exchange-rate services.
+The EUR → USD rate is entered manually and stored locally in the browser. PrintMetric does not fetch, refresh, or automatically update exchange rates, so the entered rate remains predictable until you change it. EUR pricing and USD conversion remain fully functional offline.
 
 ---
 
@@ -208,7 +383,7 @@ Ignoring those costs can easily lead to underpricing.
 
 **PrintMetric makes those costs visible.**
 
-Know the cost. Set your margin. Price your work properly.
+Know the cost. Set your markup. Price your work properly.
 
 ---
 
@@ -266,4 +441,3 @@ Engineer. Maker. Tool builder.
 ---
 
 **PrintMetric — Know your real print cost.**
-

@@ -1,0 +1,7 @@
+{
+  "name": "printmetric",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

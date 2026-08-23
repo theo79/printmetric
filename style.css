@@ -16,6 +16,17 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, "Noto Sans";
@@ -103,13 +114,40 @@ body {
   align-items: center;
 }
 
+.privacy-actions {
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.btn-compact {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+.quote-group-title {
+  display: block;
+  margin-top: 14px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.quote-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.quote-fields-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .profile-select {
   width: min(100%, 320px);
   flex: 1 1 260px;
 }
 
 /* Inputs */
-.label { display: block; font-weight: 650; margin-bottom: 6px; font-size: 14px; }
+.label { display: block; font-weight: 650; margin: 0 0 6px; font-size: 14px; }
 .label-sm { font-size: 13px; color: var(--muted); margin: 8px 0 4px; display: inline-block; }
 .input {
   width: 100%;
@@ -170,6 +208,14 @@ body {
 .btn-outline:hover { opacity: 0.95; }
 .btn-outline:active { transform: translateY(1px); }
 
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+.input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Totals */
 .results-card .totals {
   display: grid;
@@ -216,6 +262,8 @@ body {
 /* Responsive */
 @media (max-width: 840px) {
   .row { grid-template-columns: 1fr; }
+  .quote-fields-grid,
+  .quote-fields-grid-three { grid-template-columns: 1fr; }
   .app-header img { width: min(100%, 150px); max-width: 150px; max-height: 168px; }
   .tagline { font-size: 13px; }
   .results-card .totals { grid-template-columns: 1fr; }
@@ -237,6 +285,11 @@ body {
 
 /* ===== Print styles ===== */
 .print-sheet { display: none; }
+
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
 
 @media print {
   .accent-line,
@@ -307,6 +360,7 @@ body {
   }
 
   .ps-customer-block,
+  .ps-seller-block,
   .ps-section,
   .ps-pricing {
     margin-top: 18px;
@@ -319,6 +373,28 @@ body {
     color: #475569;
     font-weight: 700;
     margin-bottom: 8px;
+  }
+
+  .ps-seller-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .ps-multiline {
+    margin-top: 4px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #334155;
+  }
+
+  .ps-section,
+  .ps-customer-block,
+  .ps-pricing,
+  .ps-notes-box {
+    break-inside: avoid;
   }
 
   .ps-detail-row,
@@ -514,6 +590,29 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+.input.input-invalid {
+  border-color: #c62828;
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.12);
+}
+
+.input.input-invalid:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.validation-message {
+  display: block;
+  min-height: 0;
+  margin-top: 5px;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.validation-message:empty {
+  display: none;
 }
 
 .btn-donate svg { display: block; }
