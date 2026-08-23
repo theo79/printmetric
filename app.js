@@ -704,6 +704,7 @@ function validateAndParseGcode(file) {
 function setupGcodeUpload() {
   $("gcodeFile").addEventListener("change", (e) => {
     const file = e.target.files?.[0];
+    setText("gcodeFileName", file?.name || "No file selected");
     if (!file) return;
     validateAndParseGcode(file);
   });
@@ -830,6 +831,7 @@ function clearOutputs() {
   setText("outMinPriceNote", "");
 
   setText("outFilamentCost", "—");
+  setText("outProductionCost", "—");
   setText("outEnergyKwh", "—");
   setText("outElectricityCost", "—");
   setText("outSetupLaborCost", "—");
@@ -868,6 +870,10 @@ function clearOutputs() {
 }
 
 function setBreakdownOutputsEUR(breakdown) {
+  const productionCost = breakdown.filamentCostTotal
+    + breakdown.electricityCostTotal
+    + breakdown.wearCostTotal;
+  setText("outProductionCost", `€ ${fmtMoney(productionCost)}`);
   setText("outFilamentCost", `€ ${fmtMoney(breakdown.filamentCostTotal)}`);
   setText("outEnergyKwh", `${fmtMoney(breakdown.energyKwhTotal)} kWh`);
   setText("outElectricityCost", `€ ${fmtMoney(breakdown.electricityCostTotal)}`);

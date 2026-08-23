@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PrintMetric</title>
+  <title>PrintMetric — 3D Printing Cost Calculator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="PrintMetric is a local-first 3D printing cost calculator for filament, electricity, machine wear, labor, waste allowance, markup and quotes." />
-  <meta name="theme-color" content="#6ea8fe" />
+  <meta name="theme-color" content="#2563eb" />
   <meta property="og:title" content="PrintMetric — 3D Printing Cost Calculator" />
   <meta property="og:description" content="Calculate realistic 3D print costs and create clean customer quotes directly in your browser." />
   <meta property="og:type" content="website" />
@@ -17,350 +17,307 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="accent-line" aria-hidden="true"></div>
+  <a class="skip-link" href="#calculator">Skip to calculator</a>
 
   <header class="app-header">
-        <h1 class="sr-only">PrintMetric 3D printing cost calculator</h1>
-        <img id="appLogo" src="logo.png" alt="PrintMetric logo" />
-        <p class="tagline">Know your real print cost.</p>
-  </header>
+    <div class="header-inner">
+      <a class="brand" href="#calculator" aria-label="PrintMetric calculator home">
+        <img id="appLogo" src="logo.png" alt="" />
+        <span class="brand-copy">
+          <span class="brand-name">PrintMetric</span>
+          <span class="brand-tagline">3D printing cost calculator</span>
+        </span>
+      </a>
 
-  <main class="container">
-    <!-- Row 1: Printer + G-code -->
-    <section class="row">
-      <div class="card">
-        <label for="printerType" class="label">Printer type</label>
-        <select id="printerType" class="input">
-          <option value="" selected disabled hidden>Select a printer…</option>
-          <option value="other">Other (enter power manually)</option>
-        </select>
-        <small class="hint">Selecting a printer will auto-fill the average power.</small>
-        <div class="inline-group">
-          <label for="avgPower" class="label-sm">Average power (W) — estimated</label>
-          <input id="avgPower" class="input" type="number" step="any" min="0" placeholder="—" />
-          <small class="hint">Preset is a typical estimate. For best accuracy, enter your printer's measured average power.</small>
-        </div>
-      </div>
-
-      <div class="card">
-        <label for="gcodeFile" class="label">Upload G-code</label>
-        <input id="gcodeFile" class="input" type="file" accept=".gcode,.gco,.g" />
-        <small class="hint">Uses slicer-reported weight when available; otherwise estimates from length, diameter, and material density.</small>
-        <div id="gcodeStatus" class="hint" role="status" aria-atomic="true"></div>
-        <div class="inline-group">
-          <label for="filamentUsedGrams" class="label-sm">Filament used (g)</label>
-          <input id="filamentUsedGrams" class="input" type="number" step="any" min="0.0001" placeholder="—" />
-        </div>
-
-        <details class="inline-group">
-          <summary class="label-sm">Advanced</summary>
-          <div class="inline-group">
-            <label for="filamentDiameter" class="label-sm">Filament diameter (mm)</label>
-            <input id="filamentDiameter" class="input" type="number" step="any" min="0.0001" value="1.75" />
-          </div>
-          <div class="inline-group">
-            <label for="filamentDensity" class="label-sm">Filament density (g/cm³)</label>
-            <input id="filamentDensity" class="input" type="number" step="any" min="0.0001" value="1.24" />
-          </div>
-        </details>
-      </div>
-    </section>
-
-    <!-- Quote details -->
-    <section class="row">
-      <div class="card" style="grid-column: 1 / -1;">
-        <h2 class="label">Quote details</h2>
-
-        <h3 class="label-sm quote-group-title">Seller defaults</h3>
-        <div class="quote-fields-grid">
-          <div>
-            <label class="label-sm" for="sellerBusinessName">Business / seller name</label>
-            <input id="sellerBusinessName" class="input" type="text" maxlength="120" placeholder="Optional" />
-          </div>
-          <div>
-            <label class="label-sm" for="sellerContactDetails">Seller contact details</label>
-            <textarea id="sellerContactDetails" class="input" rows="2" maxlength="500" placeholder="Email, phone, address or website (optional)"></textarea>
-          </div>
-        </div>
-        <small class="hint">Seller details are saved locally as defaults for future quotes.</small>
-
-        <h3 class="label-sm quote-group-title">Quote information</h3>
-        <div class="quote-fields-grid quote-fields-grid-three">
-          <div>
-            <label class="label-sm" for="quoteNumber">Quote number</label>
-            <input id="quoteNumber" class="input" type="text" maxlength="80" placeholder="Optional" />
-          </div>
-          <div>
-            <label class="label-sm" for="quoteDate">Quote date</label>
-            <input id="quoteDate" class="input" type="date" />
-          </div>
-          <div>
-            <label class="label-sm" for="quoteValidUntil">Valid until</label>
-            <input id="quoteValidUntil" class="input" type="date" />
-            <small class="hint">Optional; leave blank if the quote does not expire.</small>
-          </div>
-        </div>
-
-        <h3 class="label-sm quote-group-title">Customer and project</h3>
-
-        <div class="inline-group">
-          <label class="label-sm" for="customerName">Customer name</label>
-          <input id="customerName" class="input" type="text" placeholder="Optional" />
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="jobName">Part / job name</label>
-          <input id="jobName" class="input" type="text" placeholder="Optional" />
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="quoteNotes">Notes / terms</label>
-          <textarea id="quoteNotes" class="input" rows="3" maxlength="1000" placeholder="Optional"></textarea>
-        </div>
-        <div class="buttons-wrap privacy-actions">
-          <button id="btnClearCustomerJob" class="btn-outline btn-compact" type="button">Clear customer/job data</button>
-        </div>
-        <small class="hint">Customer name, job name and notes are stored only in this browser for your next visit.</small>
-        <p id="localDataStatus" class="hint" role="status" aria-atomic="true"></p>
-      </div>
-    </section>
-
-    <!-- Profiles -->
-    <section class="row">
-      <div class="card profiles-card" style="grid-column: 1 / -1;">
-        <label class="label" for="profileSelect">Profiles</label>
-        <div class="buttons-wrap profiles-actions">
-          <select id="profileSelect" class="input profile-select">
+      <div class="profile-tools" aria-label="Profile controls">
+        <div class="profile-picker">
+          <label for="profileSelect">Profile</label>
+          <select id="profileSelect" class="input input-compact">
             <option value="" selected>Select profile…</option>
           </select>
-          <button id="btnSaveProfile" class="btn-outline" type="button">Save profile</button>
-          <button id="btnDeleteProfile" class="btn-outline" type="button">Delete profile</button>
-          <button id="btnResetLocalData" class="btn-outline btn-compact" type="button">Reset all local data</button>
         </div>
-        <small class="hint">Reset deletes all PrintMetric settings and saved profiles from this browser after confirmation.</small>
+        <button id="btnSaveProfile" class="btn btn-secondary btn-compact" type="button">Save profile</button>
+        <button id="btnDeleteProfile" class="btn btn-ghost btn-compact" type="button">Delete</button>
+        <button id="btnResetLocalData" class="btn btn-ghost btn-compact" type="button">Reset all local data</button>
       </div>
-    </section>
+    </div>
+  </header>
 
-    <!-- Row 2: Filament cost + print time -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="filamentCostPerKg">Filament Price (€/kg)</label>
-        <div class="inline-group">
-          <label for="materialType" class="label-sm">Material</label>
-          <select id="materialType" class="input">
-            <option value="">Select material…</option>
-          </select>
-          <small class="hint">Preset density is approximate. Use your filament manufacturer's value for best accuracy.</small>
-        </div>
-        <input id="filamentCostPerKg" class="input" type="number" step="any" min="0" placeholder="e.g., 22.50" />
-      </div>
-      <div class="card">
-        <label for="printTimeHours" class="label">Print time (hours)</label>
-        <input id="printTimeHours" class="input" type="number" step="any" min="0" placeholder="e.g., 3.75" />
-      </div>
-    </section>
+  <div class="page-intro">
+    <div>
+      <p class="eyebrow">Quote with confidence</p>
+      <h1>Know your real print cost.</h1>
+      <p>Build a clear, defensible price from material, machine time and labor—without sending your data anywhere.</p>
+    </div>
+    <div class="privacy-pill" aria-label="Privacy information">
+      <span class="privacy-dot" aria-hidden="true"></span>
+      Local-first · works offline
+    </div>
+  </div>
 
-    <!-- Row 3: Electricity + wear -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="electricityCost">Electricity Price (€/kWh)</label>
-        <input id="electricityCost" class="input" type="number" step="any" min="0" placeholder="e.g., 0.18" />
-      </div>
-      <div class="card">
-        <label class="label" for="machineWearCost">Machine Wear per Unit (€)</label>
-        <input id="machineWearCost" class="input" type="number" step="any" min="0" placeholder="e.g., 2.00" />
-        <small class="hint">Flat EUR amount for one printed unit; multiplied by quantity.</small>
-      </div>
-    </section>
-
-    <!-- Row 4: Labor times + hourly rate -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="setupLaborMins">Setup labor time (minutes)</label>
-        <input id="setupLaborMins" class="input" type="number" step="any" min="0" value="0" />
-        <small class="hint">Work performed once for the complete order.</small>
-
-        <div class="inline-group">
-          <label class="label-sm" for="handsOnLaborMins">Labor time per unit (minutes)</label>
-          <input id="handsOnLaborMins" class="input" type="number" step="any" min="0" placeholder="e.g., 10" />
-          <small class="hint">Repeated work such as support removal, cleanup or finishing.</small>
-        </div>
-      </div>
-      <div class="card">
-        <label class="label" for="laborCostPerHour">Labor Rate (€/hour)</label>
-        <input id="laborCostPerHour" class="input" type="number" step="any" min="0" placeholder="e.g., 10.00" />
-        <small class="hint">Estimate your hourly rate (e.g., 8–15 per hour).</small>
-      </div>
-    </section>
-
-    <!-- Row 5: Markup + Calculate/Export buttons -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="profitMargin">Markup (%)</label>
-        <input id="profitMargin" class="input" type="number" step="any" min="0" value="20" />
-        <small class="hint">Markup is the percentage added to calculated cost. Default is 20%.</small>
-
-        <div class="inline-group">
-          <label class="label-sm" for="failureWasteAllowance">Waste / Failure Allowance (%)</label>
-          <input id="failureWasteAllowance" class="input" type="number" step="any" min="0" value="5" />
-          <small class="hint">Adds a percentage buffer for failed prints, waste and other material/process losses.</small>
+  <main id="calculator" class="app-shell">
+    <div class="calculator-column">
+      <section class="section-card" aria-labelledby="print-details-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">01</span>
+          <div><h2 id="print-details-title">Print details</h2><p>Describe the job or import its slicer metadata.</p></div>
         </div>
 
-        <div class="inline-group">
-          <label class="label-sm" for="quantity">Quantity</label>
-          <input id="quantity" class="input" type="number" step="1" min="1" value="1" inputmode="numeric" />
-          <small class="hint">Positive whole numbers only.</small>
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="minimumPrice">Minimum Order Price (€)</label>
-          <input id="minimumPrice" class="input" type="number" step="any" min="0" value="0" />
-          <small class="hint">Sets a floor for the complete order after quantity is applied.</small>
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="usdPerEur">USD per EUR (manual rate)</label>
-          <input id="usdPerEur" class="input" type="number" step="any" min="0.0001" value="1.10" />
-          <small class="hint">USD is shown using this manual rate. It is not updated automatically.</small>
-        </div>
-      </div>
-      <div class="card centered buttons-card">
-        <div class="buttons-wrap">
-          <button id="btnCalculate" class="btn-accent" type="button">Calculate</button>
-          <button id="btnExportPdf" class="btn-outline" type="button">Customer Quote PDF</button>
-          <button id="btnCopySummary" class="btn-outline" type="button">Copy internal summary</button>
-        </div>
-        <small class="hint">Calculates the EUR base price with markup. Exports a customer quote PDF.</small>
-      </div>
-    </section>
-
-    <!-- Results -->
-    <section class="row">
-      <div class="card results-card" style="grid-column: 1 / -1;">
-        <h2 class="label">Order total</h2>
-        <p id="calculationStatus" class="sr-only" role="status" aria-atomic="true"></p>
-        <div class="totals">
-          <div class="eur">
-            <span class="totals-label">Base currency — EUR (€)</span>
-            <div id="outTotalEUR" class="totals-value">—</div>
-            <small id="outMinPriceNote" class="hint"></small>
+        <div class="form-grid two-column">
+          <div class="field">
+            <label for="printerType">Printer</label>
+            <select id="printerType" class="input">
+              <option value="" selected disabled hidden>Select a printer…</option>
+              <option value="other">Other (enter power manually)</option>
+            </select>
+            <small class="hint">Selecting a printer fills its estimated average power.</small>
           </div>
-          <div class="usd">
-            <span class="totals-label">Converted — USD ($)</span>
-            <div id="outTotalUSD" class="totals-value secondary">—</div>
-            <small id="fxStatus" class="hint"></small>
+          <div class="field">
+            <label for="materialType">Material</label>
+            <select id="materialType" class="input"><option value="">Select material…</option></select>
+            <small class="hint">Use your manufacturer’s density for best accuracy.</small>
           </div>
+        </div>
+
+        <div class="form-grid two-column compact-grid">
+          <div class="field">
+            <label for="filamentDiameter">Filament diameter</label>
+            <div class="input-with-unit"><input id="filamentDiameter" class="input" type="number" step="any" min="0.0001" value="1.75" /><span>mm</span></div>
+          </div>
+          <div class="field">
+            <label for="filamentDensity">Material density</label>
+            <div class="input-with-unit"><input id="filamentDensity" class="input" type="number" step="any" min="0.0001" value="1.24" /><span>g/cm³</span></div>
+          </div>
+        </div>
+
+        <div class="upload-zone">
+          <input id="gcodeFile" type="file" accept=".gcode,.gco,.g" />
+          <div class="upload-icon" aria-hidden="true">↑</div>
+          <div class="upload-copy">
+            <label for="gcodeFile">Import G-code</label>
+            <p>Drop a file here or choose from your device</p>
+            <small>.gcode, .gco or .g · metadata is read locally</small>
+          </div>
+          <span class="btn btn-secondary upload-button" aria-hidden="true">Choose file</span>
+        </div>
+        <div class="upload-feedback">
+          <span id="gcodeFileName" class="file-name">No file selected</span>
+          <div id="gcodeStatus" class="import-status" role="status" aria-live="polite" aria-atomic="true">Slicer-reported weight is preferred; length is estimated using the selected diameter and density.</div>
+        </div>
+
+        <div class="form-grid three-column">
+          <div class="field">
+            <label for="printTimeHours">Print time</label>
+            <div class="input-with-unit"><input id="printTimeHours" class="input" type="number" step="any" min="0" placeholder="3.75" /><span>h</span></div>
+          </div>
+          <div class="field">
+            <label for="filamentUsedGrams">Filament usage</label>
+            <div class="input-with-unit"><input id="filamentUsedGrams" class="input" type="number" step="any" min="0.0001" placeholder="85" /><span>g</span></div>
+          </div>
+          <div class="field">
+            <label for="quantity">Quantity</label>
+            <div class="input-with-unit"><input id="quantity" class="input" type="number" step="1" min="1" value="1" inputmode="numeric" /><span>units</span></div>
+            <small class="hint">Positive whole numbers only.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card" aria-labelledby="production-costs-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">02</span>
+          <div><h2 id="production-costs-title">Production costs</h2><p>Enter your EUR operating costs for one printed unit.</p></div>
+        </div>
+        <div class="form-grid two-column">
+          <div class="field">
+            <label for="filamentCostPerKg">Filament Price (€/kg)</label>
+            <div class="input-with-unit"><input id="filamentCostPerKg" class="input" type="number" step="any" min="0" placeholder="22.50" /><span>€/kg</span></div>
+          </div>
+          <div class="field">
+            <label for="electricityCost">Electricity Price (€/kWh)</label>
+            <div class="input-with-unit"><input id="electricityCost" class="input" type="number" step="any" min="0" placeholder="0.18" /><span>€/kWh</span></div>
+          </div>
+          <div class="field">
+            <label for="avgPower">Average power</label>
+            <div class="input-with-unit"><input id="avgPower" class="input" type="number" step="any" min="0" placeholder="120" /><span>W</span></div>
+            <small class="hint">A preset estimate; measured power is more accurate.</small>
+          </div>
+          <div class="field">
+            <label for="machineWearCost">Machine Wear per Unit (€)</label>
+            <div class="input-with-unit"><input id="machineWearCost" class="input" type="number" step="any" min="0" placeholder="2.00" /><span>€/unit</span></div>
+            <small class="hint">Flat amount per printed unit.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card" aria-labelledby="labor-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">03</span>
+          <div><h2 id="labor-title">Labor</h2><p>Separate one-time preparation from hands-on work repeated per item.</p></div>
+        </div>
+        <div class="form-grid three-column">
+          <div class="field">
+            <label for="setupLaborMins">Setup labor time</label>
+            <div class="input-with-unit"><input id="setupLaborMins" class="input" type="number" step="any" min="0" value="0" /><span>min</span></div>
+            <small class="hint">Performed once per order.</small>
+          </div>
+          <div class="field">
+            <label for="handsOnLaborMins">Labor time per unit</label>
+            <div class="input-with-unit"><input id="handsOnLaborMins" class="input" type="number" step="any" min="0" placeholder="10" /><span>min</span></div>
+            <small class="hint">Cleanup or finishing per item.</small>
+          </div>
+          <div class="field">
+            <label for="laborCostPerHour">Labor Rate (€/hour)</label>
+            <div class="input-with-unit"><input id="laborCostPerHour" class="input" type="number" step="any" min="0" placeholder="20.00" /><span>€/h</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card" aria-labelledby="pricing-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">04</span>
+          <div><h2 id="pricing-title">Pricing</h2><p>Add a practical buffer and set the commercial price.</p></div>
+        </div>
+        <div class="form-grid two-column">
+          <div class="field">
+            <label for="failureWasteAllowance">Waste / Failure Allowance (%)</label>
+            <div class="input-with-unit"><input id="failureWasteAllowance" class="input" type="number" step="any" min="0" value="5" /><span>%</span></div>
+            <small class="hint">Buffer for failed prints, waste and process losses.</small>
+          </div>
+          <div class="field">
+            <label for="profitMargin">Markup (%)</label>
+            <div class="input-with-unit"><input id="profitMargin" class="input" type="number" step="any" min="0" value="20" /><span>%</span></div>
+            <small class="hint">Markup is the percentage added to calculated cost.</small>
+          </div>
+          <div class="field">
+            <label for="minimumPrice">Minimum Order Price (€)</label>
+            <div class="input-with-unit"><input id="minimumPrice" class="input" type="number" step="any" min="0" value="0" /><span>€</span></div>
+            <small class="hint">Applied to the complete order after quantity.</small>
+          </div>
+          <div class="field">
+            <label for="usdPerEur">USD per EUR (manual rate)</label>
+            <div class="input-with-unit"><input id="usdPerEur" class="input" type="number" step="any" min="0.0001" value="1.10" /><span>USD/EUR</span></div>
+            <small class="hint">For converted output only; not updated automatically.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card" aria-labelledby="quote-details-title">
+        <div class="section-heading">
+          <span class="section-number" aria-hidden="true">05</span>
+          <div><h2 id="quote-details-title">Quote details</h2><p>Add optional professional details for the customer PDF.</p></div>
+        </div>
+
+        <div class="quote-subsection">
+          <h3>Seller defaults</h3>
+          <div class="form-grid two-column">
+            <div class="field"><label for="sellerBusinessName">Business / seller name</label><input id="sellerBusinessName" class="input" type="text" maxlength="120" placeholder="Optional" /></div>
+            <div class="field"><label for="sellerContactDetails">Seller contact details</label><textarea id="sellerContactDetails" class="input" rows="2" maxlength="500" placeholder="Email, phone, address or website"></textarea></div>
+          </div>
+          <small class="hint">Seller details are saved locally as defaults.</small>
+        </div>
+
+        <div class="quote-subsection">
+          <h3>Quote information</h3>
+          <div class="form-grid three-column">
+            <div class="field"><label for="quoteNumber">Quote number</label><input id="quoteNumber" class="input" type="text" maxlength="80" placeholder="Optional" /></div>
+            <div class="field"><label for="quoteDate">Quote date</label><input id="quoteDate" class="input" type="date" /></div>
+            <div class="field"><label for="quoteValidUntil">Valid until</label><input id="quoteValidUntil" class="input" type="date" /></div>
+          </div>
+        </div>
+
+        <div class="quote-subsection">
+          <h3>Customer and project</h3>
+          <div class="form-grid two-column">
+            <div class="field"><label for="customerName">Customer name</label><input id="customerName" class="input" type="text" placeholder="Optional" /></div>
+            <div class="field"><label for="jobName">Part / job name</label><input id="jobName" class="input" type="text" placeholder="Optional" /></div>
+            <div class="field field-wide"><label for="quoteNotes">Notes / terms</label><textarea id="quoteNotes" class="input" rows="3" maxlength="1000" placeholder="Optional"></textarea></div>
+          </div>
+          <div class="data-controls">
+            <p>Customer and job data stay only in this browser.</p>
+            <button id="btnClearCustomerJob" class="btn btn-ghost btn-compact" type="button">Clear customer/job data</button>
+          </div>
+          <p id="localDataStatus" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="result-column" aria-label="Quote result">
+      <section class="result-card">
+        <div class="result-header">
+          <p class="result-kicker">Final selling price</p>
+          <div id="outTotalEUR" class="selling-price">—</div>
+          <p class="currency-caption">Base currency — EUR (€)</p>
+          <small id="outMinPriceNote" class="result-note"></small>
+        </div>
+
+        <p id="calculationStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+
+        <div class="result-metrics">
+          <div><span>Total calculated cost</span><strong id="outAdjustedCost">—</strong></div>
+          <div><span>Markup amount</span><strong id="outProfitCost">—</strong></div>
+          <div><span>Effective unit price</span><strong id="outFinalCost">—</strong></div>
+          <div><span>Converted — USD ($)</span><strong id="outTotalUSD">—</strong></div>
+        </div>
+        <p id="fxStatus" class="result-note"></p>
+
+        <div class="result-actions">
+          <button id="btnExportPdf" class="btn btn-primary" type="button">Create customer quote PDF</button>
+          <button id="btnCalculate" class="btn btn-secondary" type="button">Recalculate</button>
+          <button id="btnCopySummary" class="btn btn-ghost" type="button">Copy internal summary</button>
         </div>
 
         <details class="cost-breakdown">
-          <summary>Show internal EUR cost breakdown</summary>
-          <div class="breakdown-row"><span>Filament (order)</span><strong id="outFilamentCost">—</strong></div>
-          <div class="breakdown-row"><span>Energy used (order)</span><strong id="outEnergyKwh">—</strong></div>
-          <div class="breakdown-row"><span>Electricity (order)</span><strong id="outElectricityCost">—</strong></div>
-          <div class="breakdown-row"><span>Setup labor (once)</span><strong id="outSetupLaborCost">—</strong></div>
-          <div class="breakdown-row"><span>Per-unit labor (order)</span><strong id="outPerUnitLaborTotal">—</strong></div>
-          <div class="breakdown-row"><span>Total labor</span><strong id="outLaborCost">—</strong></div>
-          <div class="breakdown-row"><span>Machine wear (order)</span><strong id="outWearCost">—</strong></div>
-          <div class="breakdown-row"><span>Production subtotal (order)</span><strong id="outSubtotalCost">—</strong></div>
-          <div class="breakdown-row"><span>Waste / failure allowance</span><strong id="outFailureWasteAllowance">—</strong></div>
-          <div class="breakdown-row"><span>Adjusted cost</span><strong id="outAdjustedCost">—</strong></div>
-          <div class="breakdown-row"><span>Markup amount</span><strong id="outProfitCost">—</strong></div>
-          <div class="breakdown-row"><span>Effective price per unit</span><strong id="outFinalCost">—</strong></div>
-          <div class="breakdown-row"><span>Quantity</span><strong id="outQuantity">—</strong></div>
-          <div class="breakdown-row"><span>Final order total</span><strong id="outGrandTotal">—</strong></div>
+          <summary>Cost breakdown</summary>
+          <div class="breakdown-content">
+            <div class="breakdown-row emphasis"><span>Production cost</span><strong id="outProductionCost">—</strong></div>
+            <div class="breakdown-row"><span>Filament (order)</span><strong id="outFilamentCost">—</strong></div>
+            <div class="breakdown-row"><span>Energy used (order)</span><strong id="outEnergyKwh">—</strong></div>
+            <div class="breakdown-row"><span>Electricity (order)</span><strong id="outElectricityCost">—</strong></div>
+            <div class="breakdown-row"><span>Machine wear (order)</span><strong id="outWearCost">—</strong></div>
+            <div class="breakdown-row emphasis"><span>Total labor</span><strong id="outLaborCost">—</strong></div>
+            <div class="breakdown-row"><span>Setup labor (once)</span><strong id="outSetupLaborCost">—</strong></div>
+            <div class="breakdown-row"><span>Per-unit labor (order)</span><strong id="outPerUnitLaborTotal">—</strong></div>
+            <div class="breakdown-row"><span>Production subtotal</span><strong id="outSubtotalCost">—</strong></div>
+            <div class="breakdown-row"><span>Waste allowance</span><strong id="outFailureWasteAllowance">—</strong></div>
+            <div class="breakdown-row"><span>Quantity</span><strong id="outQuantity">—</strong></div>
+            <div class="breakdown-row"><span>Final order total</span><strong id="outGrandTotal">—</strong></div>
+          </div>
         </details>
-        <small class="hint">Internal costing is not included in the customer quote PDF.</small>
-      </div>
-    </section>
+        <p class="internal-note">Internal costing stays out of the customer PDF.</p>
+      </section>
+    </aside>
   </main>
 
-  <!-- Donate bar -->
-  <aside class="donate-bar" id="donate-bar" aria-label="Support this project">
-    <div class="donate-note" id="donateNote" role="status" hidden>
-      If PrintMetric saved you from underpricing, consider supporting development.
+  <aside class="support-strip" id="donate-bar" aria-label="Support this project">
+    <div id="donateNote" role="status" hidden>If PrintMetric saved you from underpricing, consider supporting development.</div>
+    <p>PrintMetric is free and open source. <a href="https://github.com/theo79/printmetric" target="_blank" rel="noopener">Star it on GitHub</a> or support development.</p>
+    <div class="support-links">
+      <a href="https://ko-fi.com/theo79" target="_blank" rel="noopener">Ko-fi<span class="sr-only"> (opens in a new tab)</span></a>
+      <a href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener">PayPal<span class="sr-only"> (opens in a new tab)</span></a>
     </div>
-
-    <div class="support-callout">
-      <span>Like PrintMetric? <a href="https://github.com/theo79/printmetric" target="_blank" rel="noopener">⭐ Star it on GitHub</a> — it helps others discover the project.</span>
-    </div>
-
-    <div class="support-label">Support development</div>
-
-    <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener">
-      <span class="sr-only">Support PrintMetric on Ko-fi</span>
-      <!-- Ko-fi cup SVG (no text) -->
-      <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
-        <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
-        <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
-      </svg>
-    </a>
-
-    <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener">
-      <span class="sr-only">Donate to PrintMetric via PayPal</span>
-      <!-- PayPal monogram SVG -->
-      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
-      </svg>
-    </a>
   </aside>
 
-  <!-- Footer -->
   <footer class="app-footer">
-    <p>
-      USD conversion uses your manually entered rate. It is not fetched or updated automatically.
-    </p>
-    <p>
-      Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
-    </p>
+    <p>Your quote data and settings stay in this browser. The USD rate is not fetched or updated automatically.</p>
+    <p>Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a></p>
   </footer>
 
-  <!-- Print-only PDF quote -->
   <section id="printSheet" class="print-sheet" aria-hidden="true">
-    <div class="ps-head">
-      <img src="logo.png" alt="PrintMetric logo" />
-      <div>
-        <h2>PrintMetric — Quote</h2>
-        <p id="psTimestamp" class="ps-meta">—</p>
-      </div>
-    </div>
-
+    <div class="ps-head"><img src="logo.png" alt="PrintMetric logo" /><div><h2>PrintMetric — Quote</h2><p id="psTimestamp" class="ps-meta">—</p></div></div>
     <div class="ps-line"></div>
-
-    <div id="psSellerBlock" class="ps-section ps-seller-block" hidden>
-      <div class="ps-section-title">From</div>
-      <div id="psSellerName" class="ps-seller-name"></div>
-      <div id="psSellerContact" class="ps-multiline"></div>
-    </div>
-
+    <div id="psSellerBlock" class="ps-section ps-seller-block" hidden><div class="ps-section-title">From</div><div id="psSellerName" class="ps-seller-name"></div><div id="psSellerContact" class="ps-multiline"></div></div>
     <div id="psQuoteMetaBlock" class="ps-section" hidden>
       <div class="ps-section-title">Quote information</div>
-      <div id="psQuoteNumberRow" class="ps-detail-row" hidden>
-        <span>Quote number</span><strong id="psQuoteNumber">—</strong>
-      </div>
-      <div id="psQuoteDateRow" class="ps-detail-row" hidden>
-        <span>Quote date</span><strong id="psQuoteDate">—</strong>
-      </div>
-      <div id="psValidUntilRow" class="ps-detail-row" hidden>
-        <span>Valid until</span><strong id="psValidUntil">—</strong>
-      </div>
+      <div id="psQuoteNumberRow" class="ps-detail-row" hidden><span>Quote number</span><strong id="psQuoteNumber">—</strong></div>
+      <div id="psQuoteDateRow" class="ps-detail-row" hidden><span>Quote date</span><strong id="psQuoteDate">—</strong></div>
+      <div id="psValidUntilRow" class="ps-detail-row" hidden><span>Valid until</span><strong id="psValidUntil">—</strong></div>
     </div>
-
     <div id="psQuoteBlock" class="ps-customer-block" hidden>
       <div class="ps-section-title">Customer</div>
-      <div id="psCustomerRow" class="ps-detail-row" hidden>
-        <span>Customer</span>
-        <strong id="psCustomerName">—</strong>
-      </div>
-      <div id="psJobRow" class="ps-detail-row" hidden>
-        <span>Job / Part</span>
-        <strong id="psJobName">—</strong>
-      </div>
-      <div id="psNotesRow" class="ps-notes-box" hidden>
-        <span class="ps-section-title">Notes / terms</span>
-        <div id="psQuoteNotes"></div>
-      </div>
+      <div id="psCustomerRow" class="ps-detail-row" hidden><span>Customer</span><strong id="psCustomerName">—</strong></div>
+      <div id="psJobRow" class="ps-detail-row" hidden><span>Job / Part</span><strong id="psJobName">—</strong></div>
+      <div id="psNotesRow" class="ps-notes-box" hidden><span class="ps-section-title">Notes / terms</span><div id="psQuoteNotes"></div></div>
     </div>
-
     <div class="ps-section">
       <div class="ps-section-title">Production information</div>
       <div class="ps-detail-row"><span>Material</span><strong id="psMaterial">—</strong></div>
@@ -368,37 +325,18 @@
       <div class="ps-detail-row"><span>Quantity</span><strong id="psQuantity">—</strong></div>
       <div class="ps-detail-row"><span>Estimated print time per unit</span><strong id="psTime">—</strong></div>
     </div>
-
     <div class="ps-pricing">
-      <div class="ps-price-row ps-price-row-secondary">
-        <span>Unit Price (EUR)</span>
-        <div class="ps-price-stack">
-          <strong id="psUnitPriceEUR">—</strong>
-          <small id="psUnitPriceUSD">—</small>
-        </div>
-      </div>
-      <div class="ps-price-row ps-price-row-primary">
-        <span>Total Price (EUR)</span>
-        <div class="ps-price-stack">
-          <strong id="psTotalEUR">—</strong>
-          <small id="psTotalUSD">—</small>
-        </div>
-      </div>
+      <div class="ps-price-row ps-price-row-secondary"><span>Unit Price (EUR)</span><div class="ps-price-stack"><strong id="psUnitPriceEUR">—</strong><small id="psUnitPriceUSD">—</small></div></div>
+      <div class="ps-price-row ps-price-row-primary"><span>Total Price (EUR)</span><div class="ps-price-stack"><strong id="psTotalEUR">—</strong><small id="psTotalUSD">—</small></div></div>
       <div id="psMinPriceNote" class="ps-min-price-note">—</div>
       <div id="psFxNote" class="ps-min-price-note">USD values use the manually entered EUR→USD rate.</div>
     </div>
-
-    <div class="ps-footer-note">
-      <div>Quote generated with PrintMetric</div>
-      <div>Know your real print cost.</div>
-    </div>
+    <div class="ps-footer-note"><div>Quote generated with PrintMetric</div><div>Know your real print cost.</div></div>
   </section>
 
-  <!-- Scripts -->
   <script src="gcode.js"></script>
   <script src="pricing.js"></script>
   <script src="quote.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
