@@ -143,6 +143,7 @@
     const finalTotalSingle = finalTotal / quantity;
     const minimumOrderPriceApplied = minimumOrderPrice > 0 && finalTotal < minimumOrderPrice;
     const displayedTotalEUR = minimumOrderPriceApplied ? minimumOrderPrice : finalTotal;
+    const effectiveUnitPrice = displayedTotalEUR / quantity;
 
     return {
       filamentCost,
@@ -175,6 +176,7 @@
       // Legacy result name retained for callers of the baseline module.
       minimumPrice: minimumOrderPrice,
       finalTotalSingle,
+      effectiveUnitPrice,
       finalTotal,
       minimumOrderPriceApplied,
       // Legacy result name retained for callers of the baseline module.

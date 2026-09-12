@@ -104,6 +104,8 @@ let importedFilamentLengthMm = null;
 let importedFilamentWeightSource = null;
 let importedTimeSeconds = null;
 let donateNoteTimer = null;
+let latestCalculationResult = null;
+let gcodeImportSequence = 0;
 const PROFILE_FIELD_IDS = [
   "filamentCostPerKg",
   "electricityCost",
@@ -124,6 +126,11 @@ const PROFILE_FIELD_IDS = [
 ];
 const PERSISTED_FIELD_IDS = [
   ...CUSTOMER_JOB_FIELD_IDS,
+  "sellerBusinessName",
+  "sellerContactDetails",
+  "quoteNumber",
+  "quoteDate",
+  "quoteValidUntil",
   "filamentCostPerKg",
   "electricityCost",
   "machineWearCost",
@@ -174,6 +181,8 @@ function restorePersistedFields() {
   try {
     const savedPrinterType = localStorage.getItem(storageKey("printerType"));
     const savedMaterialType = localStorage.getItem(storageKey("materialType"));
+    const savedAvgPower = localStorage.getItem(storageKey("avgPower"));
+    const savedDensity = localStorage.getItem(storageKey("filamentDensity"));
 
     PERSISTED_FIELD_IDS.forEach((id) => {
       if (id === "printerType" || id === "materialType") return;
@@ -190,6 +199,10 @@ function restorePersistedFields() {
     if (savedMaterialType != null && materialType) {
       materialType.value = savedMaterialType;
       materialType.dispatchEvent(new Event("change"));
+      if (savedDensity != null) {
+        $("filamentDensity").value = savedDensity;
+        persistFieldValue("filamentDensity");
+      }
     } else if (materialType && !materialType.value) {
       materialType.value = "pla";
       materialType.dispatchEvent(new Event("change"));
@@ -199,9 +212,9 @@ function restorePersistedFields() {
       printerType.value = savedPrinterType;
       printerType.dispatchEvent(new Event("change"));
 
-      const savedAvgPower = localStorage.getItem(storageKey("avgPower"));
-      if (savedAvgPower != null && savedPrinterType === "other") {
+      if (savedAvgPower != null) {
         $("avgPower").value = savedAvgPower;
+        persistFieldValue("avgPower");
       }
     }
   } catch (err) {
@@ -248,6 +261,42 @@ function resetAllLocalData() {
 function setupLocalDataControls() {
   $("btnClearCustomerJob")?.addEventListener("click", clearCustomerJobData);
   $("btnResetLocalData")?.addEventListener("click", resetAllLocalData);
+}
+
+function localIsoDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function setDefaultQuoteDate() {
+  const quoteDate = $("quoteDate");
+  if (quoteDate && !quoteDate.value) {
+    quoteDate.value = localIsoDate();
+    persistFieldValue("quoteDate");
+  }
+}
+
+function validateQuoteDates({ showErrors = false } = {}) {
+  const result = QUOTE.validateDateRange(rawValue("quoteDate"), rawValue("quoteValidUntil"));
+  const quoteDate = $("quoteDate");
+  const validUntil = $("quoteValidUntil");
+  const shouldShow = showErrors && !result.valid;
+
+  [quoteDate, validUntil].forEach((input) => {
+    if (!input) return;
+    input.classList.toggle("input-invalid", shouldShow);
+    input.setAttribute("aria-invalid", shouldShow ? "true" : "false");
+  });
+  setText("quoteDateStatus", shouldShow ? result.message : "");
+  return result;
+}
+
+function setupQuoteDateValidation() {
+  [$("quoteDate"), $("quoteValidUntil")].forEach((input) => {
+    input?.addEventListener("change", () => validateQuoteDates({ showErrors: true }));
+  });
 }
 
 function loadProfiles() {
@@ -338,6 +387,10 @@ function applyProfile(profileObj) {
     materialTypeEl.value = profileObj.materialType;
     materialTypeEl.dispatchEvent(new Event("change"));
     persistFieldValue("materialType");
+    if (profileObj.filamentDensity != null) {
+      $("filamentDensity").value = profileObj.filamentDensity;
+      persistFieldValue("filamentDensity");
+    }
   }
 
   if (avgPowerEl) {
@@ -346,7 +399,7 @@ function applyProfile(profileObj) {
       if (otherPowerW != null) {
         avgPowerEl.value = otherPowerW;
       }
-    } else if (profileObj.avgPower != null && profileObj.printerType == null) {
+    } else if (profileObj.avgPower != null) {
       avgPowerEl.value = profileObj.avgPower;
     }
     persistFieldValue("avgPower");
@@ -460,7 +513,7 @@ function setupProfiles() {
 
     refreshProfileSelect();
     select.value = name;
-    onCalculate({ skipZeroWarning: true });
+    onCalculate();
   });
 
   deleteBtn.addEventListener("click", () => {
@@ -605,13 +658,14 @@ function updateEstimatedFilamentFromImportedLength({ updateCalculation = true } 
   setGcodeImportStatus({ grams, source: "estimated" });
 
   if (updateCalculation) {
-    onCalculate({ skipZeroWarning: true });
+    onCalculate();
   }
 
   return grams;
 }
 
 function validateAndParseGcode(file) {
+  const importSequence = ++gcodeImportSequence;
   if (!GCODE.isGcodeFilename(file?.name)) {
     setText("gcodeStatus", "Please upload a valid G-code file (.gcode, .gco, .g).");
     return;
@@ -627,6 +681,7 @@ function validateAndParseGcode(file) {
     filamentWeightSource,
     scanLimited
   }) => {
+    if (importSequence !== gcodeImportSequence) return;
     let didUpdate = false;
     const timeInput = $("printTimeHours");
     const filamentInput = $("filamentUsedGrams");
@@ -681,9 +736,10 @@ function validateAndParseGcode(file) {
     });
 
     if (didUpdate) {
-      onCalculate({ skipZeroWarning: true });
+      onCalculate();
     }
   }).catch((err) => {
+    if (importSequence !== gcodeImportSequence) return;
     console.error("G-code parse error:", err);
     setText("gcodeStatus", err?.message || "The G-code file could not be read; use manual inputs.");
   });
@@ -714,7 +770,7 @@ function setupGcodeUpload() {
   });
 }
 
-function calculateTotalsEUR(skipZeroWarning = false) {
+function calculateTotalsEUR() {
   return PRICING.calculatePricing(getPricingFormInput());
 }
 
@@ -812,6 +868,7 @@ function validateForm({ showAll = false } = {}) {
 }
 
 function clearOutputs() {
+  latestCalculationResult = null;
   setText("outTotalEUR", "—");
   setText("outTotalUSD", "—");
   setText("fxStatus", "");
@@ -867,16 +924,26 @@ function setBreakdownOutputsEUR(breakdown) {
   setText("outFailureWasteAllowance", `€ ${fmtMoney(breakdown.wasteAllowanceAmount)}`);
   setText("outAdjustedCost", `€ ${fmtMoney(breakdown.adjustedCost)}`);
   setText("outProfitCost", `€ ${fmtMoney(breakdown.markupAmount)}`);
-  setText("outFinalCost", `€ ${fmtMoney(breakdown.finalTotalSingle)}`);
+  setText("outFinalCost", `€ ${fmtMoney(breakdown.effectiveUnitPrice)}`);
   setText("outQuantity", `${breakdown.quantity}`);
   animateMoneyText("outGrandTotal", "€ ", breakdown.displayedTotalEUR);
 }
 
 function syncPrintQuoteDetails() {
+  const sellerBusinessName = ($("sellerBusinessName")?.value || "").trim();
+  const sellerContactDetails = ($("sellerContactDetails")?.value || "").trim();
+  const quoteNumber = ($("quoteNumber")?.value || "").trim();
+  const quoteDate = ($("quoteDate")?.value || "").trim();
+  const quoteValidUntil = ($("quoteValidUntil")?.value || "").trim();
   const customerName = ($("customerName")?.value || "").trim();
   const jobName = ($("jobName")?.value || "").trim();
   const quoteNotes = ($("quoteNotes")?.value || "").trim();
 
+  setText("psSellerBusinessName", sellerBusinessName || "—");
+  setText("psSellerContactDetails", sellerContactDetails);
+  setText("psQuoteNumber", quoteNumber || "—");
+  setText("psQuoteDate", quoteDate || "—");
+  setText("psQuoteValidUntil", quoteValidUntil || "—");
   setText("psCustomerName", customerName);
   setText("psJobName", jobName);
   setText("psQuoteNotes", quoteNotes);
@@ -889,6 +956,7 @@ function syncPrintQuoteDetails() {
   if ($("psJobRow")) $("psJobRow").hidden = !hasJob;
   if ($("psNotesRow")) $("psNotesRow").hidden = !hasNotes;
   if ($("psQuoteBlock")) $("psQuoteBlock").hidden = !(hasCustomer || hasJob || hasNotes);
+  if ($("psSellerBlock")) $("psSellerBlock").hidden = !(sellerBusinessName || sellerContactDetails);
 }
 
 function showDonateNoteBriefly() {
@@ -911,7 +979,7 @@ function showDonateNoteBriefly() {
 
 // EUR is the base currency. USD conversion uses only the locally entered manual rate.
 function onCalculate(options = {}) {
-  const { skipZeroWarning = false, showValidation = false } = options;
+  const { showValidation = false } = options;
   $("fxStatus").textContent = "";
   $("outMinPriceNote").textContent = "";
   $("psMinPriceNote").textContent = "";
@@ -927,11 +995,12 @@ function onCalculate(options = {}) {
     return;
   }
 
-  const breakdown = calculateTotalsEUR(skipZeroWarning);
+  const breakdown = calculateTotalsEUR();
   if (breakdown == null) {
     clearOutputs();
     return;
   }
+  latestCalculationResult = breakdown;
 
   const minimumApplied = breakdown.minimumOrderPriceApplied;
   const displayedTotalEUR = breakdown.displayedTotalEUR;
@@ -967,7 +1036,7 @@ function setupLiveCalculate() {
   const debouncedCalculate = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
-      onCalculate({ skipZeroWarning: true });
+      onCalculate();
     }, 200);
   };
 
@@ -983,17 +1052,22 @@ function setupLiveCalculate() {
 }
 
 function onExportPdf() {
-  if ($("outTotalEUR").textContent.trim() === "—") {
+  const quoteDateValidation = validateQuoteDates({ showErrors: true });
+  if (!quoteDateValidation.valid) {
+    $("quoteValidUntil")?.focus();
+    return;
+  }
+  if (!latestCalculationResult) {
     const proceed = confirm("You haven't calculated a total yet. Export anyway?");
     if (!proceed) return;
   }
 
-  const quantity = Number($("quantity")?.value);
-  const displayedTotalEUR = Number.parseFloat($("outTotalEUR")?.dataset?.animValue || $("outTotalEUR")?.textContent?.replace(/[^0-9.\-]/g, "") || "0");
+  const quantity = latestCalculationResult?.quantity ?? Number($("quantity")?.value);
+  const displayedTotalEUR = latestCalculationResult?.displayedTotalEUR ?? 0;
   const displayedUnitEUR = Number.isFinite(displayedTotalEUR) && quantity > 0 ? displayedTotalEUR / quantity : 0;
   const fxRate = Number($("usdPerEur")?.value);
 
-  $("psTotalEUR").textContent = $("outTotalEUR").textContent || "—";
+  $("psTotalEUR").textContent = `€ ${fmtMoney(displayedTotalEUR)}`;
   $("psUnitPriceEUR").textContent = `€ ${fmtMoney(displayedUnitEUR)}`;
   $("psMinPriceNote").textContent = $("outMinPriceNote").textContent || "";
 
@@ -1127,11 +1201,13 @@ function boot() {
   setupGcodeUpload();
   setupProfiles();
   setupLocalDataControls();
+  setupQuoteDateValidation();
   setupCalculate();
   setupLiveCalculate();
   setupPersistence();
   restorePersistedFields();
-  onCalculate({ skipZeroWarning: true });
+  setDefaultQuoteDate();
+  onCalculate();
 }
 
 document.addEventListener("DOMContentLoaded", boot);

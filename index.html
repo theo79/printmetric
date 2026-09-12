@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <title>PrintMetric</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="A private, local-first 3D printing cost calculator and customer quote generator." />
+  <meta property="og:title" content="PrintMetric — 3D Printing Cost Calculator" />
+  <meta property="og:description" content="Calculate real 3D printing costs and create customer quotes locally in your browser." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://theo79.github.io/printmetric/" />
+  <meta property="og:image" content="https://theo79.github.io/printmetric/logo.png" />
+  <meta property="og:image:alt" content="PrintMetric logo" />
   <link rel="icon" href="logo.png" type="image/png" />
   <link rel="preload" href="logo.png" as="image" />
   <link rel="stylesheet" href="style.css" />
@@ -13,8 +20,7 @@
 
   <header class="app-header">
         <h1 class="sr-only">PrintMetric 3D printing cost calculator</h1>
-        <img id="appLogo" src="logo.png" alt="PrintMetric logo"
-         onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+        <img id="appLogo" src="logo.png" alt="PrintMetric logo" />
         <p class="tagline">Know your real print cost.</p>
   </header>
 
@@ -64,6 +70,34 @@
       <div class="card" style="grid-column: 1 / -1;">
         <h2 class="label">Quote details</h2>
 
+        <div class="quote-fields-grid">
+          <div class="inline-group">
+            <label class="label-sm" for="sellerBusinessName">Seller / business name</label>
+            <input id="sellerBusinessName" class="input" type="text" placeholder="Optional" />
+          </div>
+
+          <div class="inline-group">
+            <label class="label-sm" for="sellerContactDetails">Seller contact details</label>
+            <textarea id="sellerContactDetails" class="input" rows="2" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="inline-group">
+            <label class="label-sm" for="quoteNumber">Quote number</label>
+            <input id="quoteNumber" class="input" type="text" placeholder="Optional" />
+          </div>
+
+          <div class="inline-group">
+            <label class="label-sm" for="quoteDate">Quote date</label>
+            <input id="quoteDate" class="input" type="date" />
+          </div>
+
+          <div class="inline-group">
+            <label class="label-sm" for="quoteValidUntil">Valid until</label>
+            <input id="quoteValidUntil" class="input" type="date" />
+          </div>
+        </div>
+        <p id="quoteDateStatus" class="hint" role="status" aria-atomic="true"></p>
+
         <div class="inline-group">
           <label class="label-sm" for="customerName">Customer name</label>
           <input id="customerName" class="input" type="text" placeholder="Optional" />
@@ -75,7 +109,7 @@
         </div>
 
         <div class="inline-group">
-          <label class="label-sm" for="quoteNotes">Notes</label>
+          <label class="label-sm" for="quoteNotes">Notes / terms</label>
           <textarea id="quoteNotes" class="input" rows="3" placeholder="Optional"></textarea>
         </div>
         <div class="buttons-wrap privacy-actions">
@@ -277,7 +311,7 @@
   <!-- Print-only PDF quote -->
   <section id="printSheet" class="print-sheet" aria-hidden="true">
     <div class="ps-head">
-      <img src="logo.png" alt="PrintMetric logo" onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+      <img src="logo.png" alt="PrintMetric logo" />
       <div>
         <h2>PrintMetric — Quote</h2>
         <p id="psTimestamp" class="ps-meta">—</p>
@@ -285,6 +319,18 @@
     </div>
 
     <div class="ps-line"></div>
+
+    <div id="psSellerBlock" class="ps-seller-block" hidden>
+      <div class="ps-section-title">From</div>
+      <strong id="psSellerBusinessName">—</strong>
+      <div id="psSellerContactDetails" class="ps-multiline"></div>
+    </div>
+
+    <div class="ps-quote-meta">
+      <div class="ps-detail-row"><span>Quote number</span><strong id="psQuoteNumber">—</strong></div>
+      <div class="ps-detail-row"><span>Quote date</span><strong id="psQuoteDate">—</strong></div>
+      <div class="ps-detail-row"><span>Valid until</span><strong id="psQuoteValidUntil">—</strong></div>
+    </div>
 
     <div id="psQuoteBlock" class="ps-customer-block" hidden>
       <div class="ps-section-title">Customer</div>
@@ -297,7 +343,7 @@
         <strong id="psJobName">—</strong>
       </div>
       <div id="psNotesRow" class="ps-notes-box" hidden>
-        <span class="ps-section-title">Notes</span>
+        <span class="ps-section-title">Notes / terms</span>
         <div id="psQuoteNotes"></div>
       </div>
     </div>
@@ -338,6 +384,7 @@
   <!-- Scripts -->
   <script src="gcode.js"></script>
   <script src="pricing.js"></script>
+  <script src="quote.js"></script>
   <script src="app.js"></script>
 
 </body>

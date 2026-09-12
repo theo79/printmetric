@@ -81,7 +81,7 @@ Your actual filament price per kg is always entered manually — because real sp
 
 ---
 
-## G-code Support
+## Supported G-code and slicers
 
 Upload a G-code file and PrintMetric can automatically detect:
 
@@ -100,6 +100,31 @@ Files over 2 GiB are rejected before reading as a browser-safety safeguard. Thes
 Compatible with metadata produced by common slicers.
 
 Manual inputs remain available when metadata is missing or when you want to override an estimate.
+
+---
+
+## Pricing formula reference
+
+PrintMetric keeps the calculation explicit and retains full precision until values are displayed:
+
+```text
+filament cost per unit = filament grams / 1000 × filament price per kg
+electricity cost per unit = average watts / 1000 × print hours × electricity price per kWh
+machine wear per unit = entered flat machine-wear amount
+setup labor cost = labor rate per hour × setup minutes / 60
+labor cost per unit = labor rate per hour × per-unit labor minutes / 60
+
+order production subtotal =
+  (filament cost per unit + electricity cost per unit + machine wear per unit
+   + labor cost per unit) × quantity
+  + setup labor cost
+
+waste allowance = order production subtotal × waste allowance percentage / 100
+markup amount = adjusted production cost × markup percentage / 100
+minimum order price = floor applied to the calculated complete-order total
+effective unit price = displayed complete-order total / quantity
+converted USD total = displayed EUR total × manually entered USD-per-EUR rate
+```
 
 ### Supported filament metadata
 
@@ -299,6 +324,8 @@ Real printing costs can also include electricity, printer wear, hands-on work, f
 Ignoring those costs can easily lead to underpricing.
 
 **PrintMetric makes those costs visible.**
+
+![PrintMetric application screenshot](docs/printmetric-screenshot.png)
 
 Know the cost. Set your markup. Price your work properly.
 

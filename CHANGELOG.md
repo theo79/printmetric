@@ -23,9 +23,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 * Clarified waste/failure allowance and minimum order price semantics.
 * Made EUR the explicit base currency and retained manual-only USD conversion.
 * Separated internal costing information from customer-facing quote output.
+* Preserved manually edited printer power and material density when restoring saved values and profiles.
+* Corrected effective unit pricing when a minimum order price applies.
+* Made quote export use the latest calculation result and ignored stale G-code import completions.
+* Completed seller details, quote identifiers and date validation in the browser quote workflow.
 
 ### Removed
 
 * Unused public exchange-rate provider implementations.
 * GitHub Pages-incompatible `/mnt/data/logo.png` fallbacks.
-
