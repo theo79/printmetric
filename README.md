@@ -1,6 +1,4 @@
-# PrintMetric
 
-### Know your real print cost.
 <div align="center">
 
 # PrintMetric ⚡
