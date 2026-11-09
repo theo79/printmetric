@@ -19,55 +19,238 @@
   <div class="accent-line" aria-hidden="true"></div>
 
   <header class="app-header">
-        <h1 class="sr-only">PrintMetric 3D printing cost calculator</h1>
-        <img id="appLogo" src="logo.png" alt="PrintMetric logo" />
-        <p class="tagline">Know your real print cost.</p>
+    <div class="navbar">
+      <div class="navbar-brand">
+        <img id="appLogo" class="brand-logo" src="logo.png" alt="PrintMetric logo" />
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <h1 class="brand-title">PrintMetric</h1>
+            <span class="tagline">True 3D Print Cost Estimator</span>
+          </div>
+          <p class="brand-subtitle">Know your real print cost. Local-first &amp; private.</p>
+        </div>
+      </div>
+
+      <nav class="navbar-actions" aria-label="Quick links and theme">
+        <a class="nav-icon-link" href="https://github.com/theo79/printmetric" target="_blank" rel="noopener" title="Star PrintMetric on GitHub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+            <path d="M9 18c-4.51 2-5-2-7-2"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+
+        <a class="nav-icon-link kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" title="Support PrintMetric on Ko-fi">
+          <span class="sr-only">Support PrintMetric on Ko-fi</span>
+          <svg width="18" height="18" viewBox="0 0 256 256" aria-hidden="true">
+            <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
+            <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
+          </svg>
+        </a>
+
+        <a class="nav-icon-link paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener" title="Donate via PayPal">
+          <span class="sr-only">Donate to PrintMetric via PayPal</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
+          </svg>
+        </a>
+
+        <button id="btnThemeToggle" class="theme-toggle" type="button" aria-pressed="false" title="Toggle dark or light theme">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+          <span id="themeToggleText" class="sr-only">Toggle dark mode</span>
+        </button>
+      </nav>
+    </div>
   </header>
 
-  <main class="container">
-    <!-- Row 1: Printer + G-code -->
-    <section class="row">
-      <div class="card">
-        <label for="printerType" class="label">Printer type</label>
-        <select id="printerType" class="input">
-          <option value="" selected disabled hidden>Select a printer…</option>
-          <option value="other">Other (enter power manually)</option>
-        </select>
-        <small class="hint">Selecting a printer will auto-fill the average power.</small>
-        <div class="inline-group">
-          <label for="avgPower" class="label-sm">Average power (W) — estimated</label>
-          <input id="avgPower" class="input" type="number" step="any" min="0" placeholder="—" />
-          <small class="hint">Preset is a typical estimate. For best accuracy, enter your printer's measured average power.</small>
-        </div>
-      </div>
+  <main class="container dashboard-layout">
+    <!-- Left Column: Input Cards -->
+    <div class="form-column dashboard-inputs">
 
-      <div class="card">
-        <label for="gcodeFile" class="label">Upload G-code</label>
-        <input id="gcodeFile" class="input" type="file" accept=".gcode,.gco,.g" />
-        <small class="hint">Uses slicer-reported weight when available; otherwise estimates from length, diameter, and material density.</small>
-        <div id="gcodeStatus" class="hint" role="status" aria-atomic="true"></div>
-        <div class="inline-group">
-          <label for="filamentUsedGrams" class="label-sm">Filament used (g)</label>
-          <input id="filamentUsedGrams" class="input" type="number" step="any" min="0.0001" placeholder="—" />
-        </div>
-
-        <details class="inline-group">
-          <summary class="label-sm">Advanced</summary>
-          <div class="inline-group">
-            <label for="filamentDiameter" class="label-sm">Filament diameter (mm)</label>
-            <input id="filamentDiameter" class="input" type="number" step="any" min="0.0001" value="1.75" />
+      <!-- Profiles Toolbar Card -->
+      <section class="card profiles-card">
+        <div class="card-header-inline">
+          <div>
+            <label class="label" for="profileSelect">Saved Profiles</label>
+            <small class="hint">Store and switch reusable printer, material, and shop rate presets.</small>
           </div>
-          <div class="inline-group">
-            <label for="filamentDensity" class="label-sm">Filament density (g/cm³)</label>
-            <input id="filamentDensity" class="input" type="number" step="any" min="0.0001" value="1.24" />
-          </div>
-        </details>
-      </div>
-    </section>
+        </div>
+        <div class="buttons-wrap profiles-actions">
+          <select id="profileSelect" class="input profile-select">
+            <option value="" selected>Select profile…</option>
+          </select>
+          <button id="btnSaveProfile" class="btn-secondary" type="button">Save profile</button>
+          <button id="btnDeleteProfile" class="btn-danger-outline" type="button">Delete profile</button>
+          <button id="btnResetLocalData" class="btn-danger-outline btn-compact" type="button">Reset all local data</button>
+        </div>
+        <small class="hint">Reset deletes all PrintMetric settings and saved profiles from this browser after confirmation.</small>
+      </section>
 
-    <!-- Quote details -->
-    <section class="row">
-      <div class="card" style="grid-column: 1 / -1;">
+      <!-- Card 1: Printer & Slicer Upload -->
+      <section class="row">
+        <div class="card">
+          <div class="card-section-title">Hardware &amp; Power</div>
+          <label for="printerType" class="label">Printer type</label>
+          <select id="printerType" class="input">
+            <option value="" selected disabled hidden>Select a printer…</option>
+            <option value="other">Other (enter power manually)</option>
+          </select>
+          <small class="hint">Selecting a printer will auto-fill the average power.</small>
+          <div class="inline-group">
+            <label for="avgPower" class="label-sm">Average power (W) — estimated</label>
+            <input id="avgPower" class="input" type="number" step="any" min="0" placeholder="—" />
+            <small class="hint">Preset is a typical estimate. For best accuracy, enter your printer's measured average power.</small>
+          </div>
+        </div>
+
+        <div class="card dropzone-card" id="gcodeDropzoneCard">
+          <div class="card-section-title">Slicer Metadata Import</div>
+          <label for="gcodeFile" class="label">Upload G-code or 3MF</label>
+
+          <div id="gcodeDropzone" class="dropzone" tabindex="0" role="button" aria-label="Drag and drop a .gcode or .3mf file here, or click to browse">
+            <input id="gcodeFile" class="input sr-only-file" type="file" accept=".gcode,.gco,.g,.3mf" />
+            <div class="dropzone-IconWrap" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            </div>
+            <div class="dropzone-copy">
+              <strong>Drag &amp; drop .gcode or .3mf file here, or <span class="dropzone-browse">browse</span></strong>
+              <small class="hint">Uses slicer-reported weight when available; otherwise estimates from length, diameter, and material density.</small>
+            </div>
+          </div>
+
+          <div id="gcodeLoadedBadge" class="gcode-badge" hidden>
+            <div class="gcode-badge-info">
+              <span id="gcodeBadgeSlicer" class="badge-pill">Slicer</span>
+              <span id="gcodeBadgeFilename" class="gcode-filename"></span>
+              <span id="gcodeBadgeStats" class="gcode-stats"></span>
+            </div>
+            <button id="btnClearGcode" class="btn-ghost-sm" type="button">Remove / Replace</button>
+          </div>
+
+          <div id="gcodeStatus" class="hint status-line" role="status" aria-atomic="true"></div>
+
+          <div class="inline-group">
+            <label for="filamentUsedGrams" class="label-sm">Filament used (g)</label>
+            <input id="filamentUsedGrams" class="input" type="number" step="any" min="0.0001" placeholder="—" />
+          </div>
+
+          <details class="inline-group advanced-details">
+            <summary class="label-sm">Advanced physical parameters</summary>
+            <div class="advanced-grid">
+              <div class="inline-group">
+                <label for="filamentDiameter" class="label-sm">Filament diameter (mm)</label>
+                <input id="filamentDiameter" class="input" type="number" step="any" min="0.0001" value="1.75" />
+              </div>
+              <div class="inline-group">
+                <label for="filamentDensity" class="label-sm">Filament density (g/cm³)</label>
+                <input id="filamentDensity" class="input" type="number" step="any" min="0.0001" value="1.24" />
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Card 2: Filament & Print Time -->
+      <section class="row">
+        <div class="card">
+          <div class="card-section-title">Material &amp; Spool</div>
+          <label class="label" for="filamentCostPerKg">Filament Price (€/kg)</label>
+          <div class="inline-group">
+            <label for="materialType" class="label-sm">Material</label>
+            <select id="materialType" class="input">
+              <option value="">Select material…</option>
+            </select>
+            <small class="hint">Preset density is approximate. Use your filament manufacturer's value for best accuracy.</small>
+          </div>
+          <input id="filamentCostPerKg" class="input" type="number" step="any" min="0" placeholder="e.g., 22.50" />
+        </div>
+
+        <div class="card">
+          <div class="card-section-title">Duration &amp; Operating</div>
+          <label for="printTimeHours" class="label">Print time (hours)</label>
+          <input id="printTimeHours" class="input" type="number" step="any" min="0" placeholder="e.g., 3.75" />
+
+          <div class="inline-group">
+            <label class="label" for="electricityCost">Electricity Price (€/kWh)</label>
+            <input id="electricityCost" class="input" type="number" step="any" min="0" placeholder="e.g., 0.18" />
+          </div>
+
+          <div class="inline-group">
+            <label class="label" for="machineWearCost">Machine Wear per Unit (€)</label>
+            <input id="machineWearCost" class="input" type="number" step="any" min="0" placeholder="e.g., 2.00" />
+            <small class="hint">Flat EUR amount for one printed unit; multiplied by quantity.</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 3: Labor & Commercial Markup -->
+      <section class="row">
+        <div class="card">
+          <div class="card-section-title">Labor &amp; Prep</div>
+          <label class="label" for="setupLaborMins">Setup labor time (minutes)</label>
+          <input id="setupLaborMins" class="input" type="number" step="any" min="0" value="0" />
+          <small class="hint">Work performed once for the complete order.</small>
+
+          <div class="inline-group">
+            <label class="label-sm" for="handsOnLaborMins">Labor time per unit (minutes)</label>
+            <input id="handsOnLaborMins" class="input" type="number" step="any" min="0" placeholder="e.g., 10" />
+            <small class="hint">Repeated work such as support removal, cleanup or finishing.</small>
+          </div>
+
+          <div class="inline-group">
+            <label class="label" for="laborCostPerHour">Labor Rate (€/hour)</label>
+            <input id="laborCostPerHour" class="input" type="number" step="any" min="0" placeholder="e.g., 10.00" />
+            <small class="hint">Estimate your hourly rate (e.g., 8–15 per hour).</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-section-title">Commercial Pricing &amp; Batch</div>
+          <label class="label" for="profitMargin">Markup (%)</label>
+          <input id="profitMargin" class="input" type="number" step="any" min="0" value="20" />
+          <small class="hint">Markup is the percentage added to calculated cost. Default is 20%.</small>
+
+          <div class="inline-group">
+            <label class="label-sm" for="failureWasteAllowance">Waste / Failure Allowance (%)</label>
+            <input id="failureWasteAllowance" class="input" type="number" step="any" min="0" value="5" />
+            <small class="hint">Adds a percentage buffer for failed prints, waste and other material/process losses.</small>
+          </div>
+
+          <div class="split-2">
+            <div class="inline-group">
+              <label class="label-sm" for="quantity">Quantity</label>
+              <input id="quantity" class="input" type="number" step="1" min="1" value="1" inputmode="numeric" />
+              <small class="hint">Positive whole numbers only.</small>
+            </div>
+
+            <div class="inline-group">
+              <label class="label-sm" for="minimumPrice">Minimum Order Price (€)</label>
+              <input id="minimumPrice" class="input" type="number" step="any" min="0" value="0" />
+              <small class="hint">Sets a floor for the complete order after quantity is applied.</small>
+            </div>
+          </div>
+
+          <div class="inline-group">
+            <label class="label-sm" for="usdPerEur">USD per EUR (manual rate)</label>
+            <input id="usdPerEur" class="input" type="number" step="any" min="0.0001" value="1.10" />
+            <small class="hint">USD is shown using this manual rate. It is not updated automatically.</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 4: Quote Details -->
+      <section class="card quote-details-card">
+        <div class="card-section-title">Customer &amp; Quote Metadata</div>
         <h2 class="label">Quote details</h2>
 
         <div class="quote-fields-grid">
@@ -98,14 +281,16 @@
         </div>
         <p id="quoteDateStatus" class="hint" role="status" aria-atomic="true"></p>
 
-        <div class="inline-group">
-          <label class="label-sm" for="customerName">Customer name</label>
-          <input id="customerName" class="input" type="text" placeholder="Optional" />
-        </div>
+        <div class="quote-fields-grid">
+          <div class="inline-group">
+            <label class="label-sm" for="customerName">Customer name</label>
+            <input id="customerName" class="input" type="text" placeholder="Optional" />
+          </div>
 
-        <div class="inline-group">
-          <label class="label-sm" for="jobName">Part / job name</label>
-          <input id="jobName" class="input" type="text" placeholder="Optional" />
+          <div class="inline-group">
+            <label class="label-sm" for="jobName">Part / job name</label>
+            <input id="jobName" class="input" type="text" placeholder="Optional" />
+          </div>
         </div>
 
         <div class="inline-group">
@@ -113,132 +298,31 @@
           <textarea id="quoteNotes" class="input" rows="3" placeholder="Optional"></textarea>
         </div>
         <div class="buttons-wrap privacy-actions">
-          <button id="btnClearCustomerJob" class="btn-outline btn-compact" type="button">Clear customer/job data</button>
+          <button id="btnClearCustomerJob" class="btn-secondary btn-compact" type="button">Clear customer/job data</button>
         </div>
         <small class="hint">Customer name, job name and notes are stored only in this browser for your next visit.</small>
         <p id="localDataStatus" class="hint" role="status" aria-atomic="true"></p>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <!-- Profiles -->
-    <section class="row">
-      <div class="card profiles-card" style="grid-column: 1 / -1;">
-        <label class="label" for="profileSelect">Profiles</label>
-        <div class="buttons-wrap profiles-actions">
-          <select id="profileSelect" class="input profile-select">
-            <option value="" selected>Select profile…</option>
-          </select>
-          <button id="btnSaveProfile" class="btn-outline" type="button">Save profile</button>
-          <button id="btnDeleteProfile" class="btn-outline" type="button">Delete profile</button>
-          <button id="btnResetLocalData" class="btn-outline btn-compact" type="button">Reset all local data</button>
-        </div>
-        <small class="hint">Reset deletes all PrintMetric settings and saved profiles from this browser after confirmation.</small>
-      </div>
-    </section>
-
-    <!-- Row 2: Filament cost + print time -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="filamentCostPerKg">Filament Price (€/kg)</label>
-        <div class="inline-group">
-          <label for="materialType" class="label-sm">Material</label>
-          <select id="materialType" class="input">
-            <option value="">Select material…</option>
-          </select>
-          <small class="hint">Preset density is approximate. Use your filament manufacturer's value for best accuracy.</small>
-        </div>
-        <input id="filamentCostPerKg" class="input" type="number" step="any" min="0" placeholder="e.g., 22.50" />
-      </div>
-      <div class="card">
-        <label for="printTimeHours" class="label">Print time (hours)</label>
-        <input id="printTimeHours" class="input" type="number" step="any" min="0" placeholder="e.g., 3.75" />
-      </div>
-    </section>
-
-    <!-- Row 3: Electricity + wear -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="electricityCost">Electricity Price (€/kWh)</label>
-        <input id="electricityCost" class="input" type="number" step="any" min="0" placeholder="e.g., 0.18" />
-      </div>
-      <div class="card">
-        <label class="label" for="machineWearCost">Machine Wear per Unit (€)</label>
-        <input id="machineWearCost" class="input" type="number" step="any" min="0" placeholder="e.g., 2.00" />
-        <small class="hint">Flat EUR amount for one printed unit; multiplied by quantity.</small>
-      </div>
-    </section>
-
-    <!-- Row 4: Labor times + hourly rate -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="setupLaborMins">Setup labor time (minutes)</label>
-        <input id="setupLaborMins" class="input" type="number" step="any" min="0" value="0" />
-        <small class="hint">Work performed once for the complete order.</small>
-
-        <div class="inline-group">
-          <label class="label-sm" for="handsOnLaborMins">Labor time per unit (minutes)</label>
-          <input id="handsOnLaborMins" class="input" type="number" step="any" min="0" placeholder="e.g., 10" />
-          <small class="hint">Repeated work such as support removal, cleanup or finishing.</small>
-        </div>
-      </div>
-      <div class="card">
-        <label class="label" for="laborCostPerHour">Labor Rate (€/hour)</label>
-        <input id="laborCostPerHour" class="input" type="number" step="any" min="0" placeholder="e.g., 10.00" />
-        <small class="hint">Estimate your hourly rate (e.g., 8–15 per hour).</small>
-      </div>
-    </section>
-
-    <!-- Row 5: Markup + Calculate/Export buttons -->
-    <section class="row">
-      <div class="card">
-        <label class="label" for="profitMargin">Markup (%)</label>
-        <input id="profitMargin" class="input" type="number" step="any" min="0" value="20" />
-        <small class="hint">Markup is the percentage added to calculated cost. Default is 20%.</small>
-
-        <div class="inline-group">
-          <label class="label-sm" for="failureWasteAllowance">Waste / Failure Allowance (%)</label>
-          <input id="failureWasteAllowance" class="input" type="number" step="any" min="0" value="5" />
-          <small class="hint">Adds a percentage buffer for failed prints, waste and other material/process losses.</small>
+    <!-- Right Column: Sticky Summary Dock -->
+    <aside class="summary-column dashboard-dock" aria-label="Order summary and actions">
+      <div class="card results-card order-total-card sticky-dock">
+        <div class="dock-header">
+          <div>
+            <div class="card-section-title">Live Estimate</div>
+            <h2 class="label dock-title">Order total</h2>
+          </div>
+          <span id="outUnitPill" class="unit-price-pill">€ — / unit</span>
         </div>
 
-        <div class="inline-group">
-          <label class="label-sm" for="quantity">Quantity</label>
-          <input id="quantity" class="input" type="number" step="1" min="1" value="1" inputmode="numeric" />
-          <small class="hint">Positive whole numbers only.</small>
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="minimumPrice">Minimum Order Price (€)</label>
-          <input id="minimumPrice" class="input" type="number" step="any" min="0" value="0" />
-          <small class="hint">Sets a floor for the complete order after quantity is applied.</small>
-        </div>
-
-        <div class="inline-group">
-          <label class="label-sm" for="usdPerEur">USD per EUR (manual rate)</label>
-          <input id="usdPerEur" class="input" type="number" step="any" min="0.0001" value="1.10" />
-          <small class="hint">USD is shown using this manual rate. It is not updated automatically.</small>
-        </div>
-      </div>
-      <div class="card centered buttons-card">
-        <div class="buttons-wrap">
-          <button id="btnCalculate" class="btn-accent" type="button">Calculate</button>
-          <button id="btnExportPdf" class="btn-outline" type="button">Customer Quote PDF</button>
-          <button id="btnCopySummary" class="btn-outline" type="button">Copy quote summary</button>
-        </div>
-        <small class="hint">Calculates the EUR base price with markup. Exports a customer quote PDF.</small>
-      </div>
-    </section>
-
-    <!-- Results -->
-    <section class="row">
-      <div class="card results-card" style="grid-column: 1 / -1;">
-        <h2 class="label">Order total</h2>
         <p id="calculationStatus" class="sr-only" role="status" aria-atomic="true"></p>
+
         <div class="totals">
           <div class="eur">
             <span class="totals-label">Base currency — EUR (€)</span>
             <div id="outTotalEUR" class="totals-value">—</div>
-            <small id="outMinPriceNote" class="hint"></small>
+            <small id="outMinPriceNote" class="hint min-price-badge"></small>
           </div>
           <div class="usd">
             <span class="totals-label">Converted — USD ($)</span>
@@ -247,25 +331,41 @@
           </div>
         </div>
 
-        <details class="cost-breakdown">
+        <div class="dock-actions">
+          <button id="btnCalculate" class="btn-accent btn-block" type="button">Calculate</button>
+          <div class="dock-secondary-actions">
+            <button id="btnExportPdf" class="btn-accent-outline" type="button">Customer Quote PDF</button>
+            <button id="btnCopySummary" class="btn-secondary" type="button">Copy quote summary</button>
+          </div>
+          <small class="hint">Calculates the EUR base price with markup. Exports a customer quote PDF.</small>
+        </div>
+
+        <details class="cost-breakdown" open>
           <summary>Show EUR cost breakdown</summary>
-          <div class="breakdown-row"><span>Filament (order)</span><strong id="outFilamentCost">—</strong></div>
-          <div class="breakdown-row"><span>Energy used (order)</span><strong id="outEnergyKwh">—</strong></div>
-          <div class="breakdown-row"><span>Electricity (order)</span><strong id="outElectricityCost">—</strong></div>
-          <div class="breakdown-row"><span>Setup labor (once)</span><strong id="outSetupLaborCost">—</strong></div>
-          <div class="breakdown-row"><span>Per-unit labor (order)</span><strong id="outPerUnitLaborTotal">—</strong></div>
-          <div class="breakdown-row"><span>Total labor</span><strong id="outLaborCost">—</strong></div>
-          <div class="breakdown-row"><span>Machine wear (order)</span><strong id="outWearCost">—</strong></div>
-          <div class="breakdown-row"><span>Production subtotal (order)</span><strong id="outSubtotalCost">—</strong></div>
-          <div class="breakdown-row"><span>Waste / failure allowance</span><strong id="outFailureWasteAllowance">—</strong></div>
-          <div class="breakdown-row"><span>Adjusted cost</span><strong id="outAdjustedCost">—</strong></div>
-          <div class="breakdown-row"><span>Markup amount</span><strong id="outProfitCost">—</strong></div>
-          <div class="breakdown-row"><span>Effective price per unit</span><strong id="outFinalCost">—</strong></div>
-          <div class="breakdown-row"><span>Quantity</span><strong id="outQuantity">—</strong></div>
-          <div class="breakdown-row"><span>Final order total</span><strong id="outGrandTotal">—</strong></div>
+          <div class="breakdown-tree">
+            <div class="breakdown-group-label">Direct Production</div>
+            <div class="breakdown-row"><span>Filament (order)</span><strong id="outFilamentCost">—</strong></div>
+            <div class="breakdown-row"><span>Energy used (order)</span><strong id="outEnergyKwh">—</strong></div>
+            <div class="breakdown-row"><span>Electricity (order)</span><strong id="outElectricityCost">—</strong></div>
+            <div class="breakdown-row"><span>Machine wear (order)</span><strong id="outWearCost">—</strong></div>
+
+            <div class="breakdown-group-label">Labor</div>
+            <div class="breakdown-row"><span>Setup labor (once)</span><strong id="outSetupLaborCost">—</strong></div>
+            <div class="breakdown-row"><span>Per-unit labor (order)</span><strong id="outPerUnitLaborTotal">—</strong></div>
+            <div class="breakdown-row"><span>Total labor</span><strong id="outLaborCost">—</strong></div>
+
+            <div class="breakdown-group-label">Totals &amp; Margin</div>
+            <div class="breakdown-row"><span>Production subtotal (order)</span><strong id="outSubtotalCost">—</strong></div>
+            <div class="breakdown-row"><span>Waste / failure allowance</span><strong id="outFailureWasteAllowance">—</strong></div>
+            <div class="breakdown-row"><span>Adjusted cost</span><strong id="outAdjustedCost">—</strong></div>
+            <div class="breakdown-row"><span>Markup amount</span><strong id="outProfitCost">—</strong></div>
+            <div class="breakdown-row"><span>Effective price per unit</span><strong id="outFinalCost">—</strong></div>
+            <div class="breakdown-row"><span>Quantity</span><strong id="outQuantity">—</strong></div>
+            <div class="breakdown-row breakdown-row-highlight"><span>Final order total</span><strong id="outGrandTotal">—</strong></div>
+          </div>
         </details>
       </div>
-    </section>
+    </aside>
   </main>
 
   <!-- Donate bar -->
@@ -282,8 +382,7 @@
 
     <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener">
       <span class="sr-only">Support PrintMetric on Ko-fi</span>
-      <!-- Ko-fi cup SVG (no text) -->
-      <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 256 256" aria-hidden="true">
         <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
         <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
       </svg>
@@ -291,8 +390,7 @@
 
     <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener">
       <span class="sr-only">Donate to PrintMetric via PayPal</span>
-      <!-- PayPal monogram SVG -->
-      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
       </svg>
     </a>
@@ -307,6 +405,22 @@
       Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
     </p>
   </footer>
+
+  <!-- Accessible HTML Dialog Modal for Profiles & Confirmations -->
+  <dialog id="appDialog" class="app-dialog" aria-labelledby="dialogTitle" aria-describedby="dialogMessage">
+    <form id="dialogForm" method="dialog" class="dialog-body">
+      <h3 id="dialogTitle" class="dialog-title">Confirm Action</h3>
+      <p id="dialogMessage" class="dialog-message"></p>
+      <div id="dialogInputWrap" class="inline-group" hidden>
+        <label for="dialogInput" id="dialogInputLabel" class="label-sm">Profile name</label>
+        <input id="dialogInput" class="input" type="text" autocomplete="off" />
+      </div>
+      <div class="dialog-actions">
+        <button id="btnDialogCancel" class="btn-secondary" type="button" value="cancel">Cancel</button>
+        <button id="btnDialogConfirm" class="btn-accent" type="submit" value="confirm">Confirm</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Print-only PDF quote -->
   <section id="printSheet" class="print-sheet" aria-hidden="true">

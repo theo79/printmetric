@@ -44,6 +44,7 @@ const MATERIAL_PRESETS = [
 function $(id) {
   return document.getElementById(id);
 }
+
 function fmtMoney(n) {
   return Number.isFinite(n) ? n.toFixed(2) : "—";
 }
@@ -97,15 +98,19 @@ function animateMoneyText(id, currencyPrefix, value, durationMs = 450) {
 
 const STORAGE_KEY_PREFIX = "printmetric_";
 const PROFILES_STORAGE_KEY = "printmetric_profiles";
+const THEME_STORAGE_KEY = "printmetric_theme";
 const CUSTOMER_JOB_FIELD_IDS = ["customerName", "jobName", "quoteNotes"];
 let timeFromGcode = false;
 let filamentFromGcode = false;
 let importedFilamentLengthMm = null;
 let importedFilamentWeightSource = null;
 let importedTimeSeconds = null;
+let importedFileName = null;
+let importedSlicerName = null;
 let donateNoteTimer = null;
 let latestCalculationResult = null;
 let gcodeImportSequence = 0;
+
 const PROFILE_FIELD_IDS = [
   "filamentCostPerKg",
   "electricityCost",
@@ -124,6 +129,7 @@ const PROFILE_FIELD_IDS = [
   "minimumPrice",
   "quantity"
 ];
+
 const PERSISTED_FIELD_IDS = [
   ...CUSTOMER_JOB_FIELD_IDS,
   "sellerBusinessName",
@@ -153,6 +159,138 @@ const PERSISTED_FIELD_IDS = [
 
 function storageKey(id) {
   return `${STORAGE_KEY_PREFIX}${id}`;
+}
+
+function getEffectiveTheme() {
+  const rootAttr = document.documentElement.getAttribute("data-theme");
+  if (rootAttr === "dark" || rootAttr === "light") return rootAttr;
+  const prefersDark = typeof window !== "undefined"
+    && window.matchMedia
+    && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return prefersDark ? "dark" : "light";
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === "dark" || theme === "light") {
+    root.setAttribute("data-theme", theme);
+  } else {
+    root.removeAttribute("data-theme");
+  }
+
+  const effective = getEffectiveTheme();
+  const btn = $("btnThemeToggle");
+  if (btn) {
+    btn.setAttribute("aria-pressed", effective === "dark" ? "true" : "false");
+  }
+  setText("themeToggleText", effective === "dark" ? "Switch to light mode" : "Switch to dark mode");
+}
+
+function setupTheme() {
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === "dark" || savedTheme === "light") {
+      applyTheme(savedTheme);
+    } else {
+      applyTheme(null);
+    }
+  } catch (err) {
+    applyTheme(null);
+  }
+
+  $("btnThemeToggle")?.addEventListener("click", () => {
+    const nextTheme = getEffectiveTheme() === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch (err) {
+      // Ignore storage errors in private mode.
+    }
+  });
+}
+
+function openDialogModal({
+  title = "Confirm Action",
+  message = "",
+  inputLabel = "",
+  initialValue = "",
+  showInput = false,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  danger = false,
+  fallback = null
+} = {}) {
+  const dialog = $("appDialog");
+  const titleEl = $("dialogTitle");
+  const msgEl = $("dialogMessage");
+  const inputWrap = $("dialogInputWrap");
+  const inputLabelEl = $("dialogInputLabel");
+  const inputEl = $("dialogInput");
+  const confirmBtn = $("btnDialogConfirm");
+  const cancelBtn = $("btnDialogCancel");
+  const form = $("dialogForm");
+
+  if (!dialog || typeof dialog.showModal !== "function" || !form || !confirmBtn || !cancelBtn) {
+    return Promise.resolve(typeof fallback === "function" ? fallback() : null);
+  }
+
+  if (dialog.open) {
+    dialog.close();
+  }
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (inputWrap) inputWrap.hidden = !showInput;
+  if (inputLabelEl && inputLabel) inputLabelEl.textContent = inputLabel;
+  if (inputEl) {
+    inputEl.value = initialValue;
+  }
+
+  confirmBtn.textContent = confirmText;
+  confirmBtn.className = danger ? "btn-danger" : "btn-accent";
+  cancelBtn.textContent = cancelText;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (dialog.open) dialog.close();
+      resolve(result);
+    };
+
+    const onCancelClick = () => finish(showInput ? null : false);
+    const onDialogClose = () => finish(showInput ? null : false);
+    const onSubmit = (e) => {
+      e.preventDefault();
+      if (showInput) {
+        finish(inputEl ? inputEl.value : "");
+      } else {
+        finish(true);
+      }
+    };
+
+    function cleanup() {
+      cancelBtn.removeEventListener("click", onCancelClick);
+      dialog.removeEventListener("close", onDialogClose);
+      dialog.removeEventListener("cancel", onCancelClick);
+      form.removeEventListener("submit", onSubmit);
+    }
+
+    cancelBtn.addEventListener("click", onCancelClick);
+    dialog.addEventListener("close", onDialogClose);
+    dialog.addEventListener("cancel", onCancelClick);
+    form.addEventListener("submit", onSubmit);
+
+    dialog.showModal();
+    if (showInput && inputEl) {
+      inputEl.focus();
+      inputEl.select();
+    } else {
+      confirmBtn.focus();
+    }
+  });
 }
 
 function persistFieldValue(id) {
@@ -220,7 +358,6 @@ function restorePersistedFields() {
   } catch (err) {
     // Fail silently when storage is unavailable.
   }
-
 }
 
 function clearCustomerJobData() {
@@ -238,10 +375,16 @@ function clearCustomerJobData() {
   setText("localDataStatus", "Customer name, job name and notes were cleared from this browser.");
 }
 
-function resetAllLocalData() {
-  const confirmed = confirm(
-    "Reset all PrintMetric data stored in this browser? This deletes current inputs, customer/job information, settings and all saved profiles."
-  );
+async function resetAllLocalData() {
+  const message =
+    "Reset all PrintMetric data stored in this browser? This deletes current inputs, customer/job information, settings and all saved profiles.";
+  const confirmed = await openDialogModal({
+    title: "Reset all local data",
+    message,
+    confirmText: "Reset all data",
+    danger: true,
+    fallback: () => confirm(message)
+  });
   if (!confirmed) return;
 
   try {
@@ -492,14 +635,27 @@ function setupProfiles() {
     }
   });
 
-  saveBtn.addEventListener("click", () => {
-    const enteredName = prompt("Profile name:", select.value || "");
+  saveBtn.addEventListener("click", async () => {
+    const enteredName = await openDialogModal({
+      title: "Save Profile",
+      message: "Enter a name to save the current printer, material, and shop rate settings.",
+      inputLabel: "Profile name",
+      initialValue: select.value || "",
+      showInput: true,
+      confirmText: "Save profile",
+      fallback: () => prompt("Profile name:", select.value || "")
+    });
     const name = enteredName ? enteredName.trim() : "";
     if (!name) return;
 
     const profiles = loadProfiles();
     if (profiles[name]) {
-      const overwrite = confirm(`Profile "${name}" already exists. Overwrite?`);
+      const overwrite = await openDialogModal({
+        title: "Overwrite Profile",
+        message: `Profile "${name}" already exists. Overwrite it with current values?`,
+        confirmText: "Overwrite",
+        fallback: () => confirm(`Profile "${name}" already exists. Overwrite?`)
+      });
       if (!overwrite) return;
     }
 
@@ -507,7 +663,7 @@ function setupProfiles() {
     profiles[name] = profile;
 
     if (!saveProfiles(profiles)) {
-      alert("Could not save profile.");
+      setText("localDataStatus", "Could not save profile in this browser.");
       return;
     }
 
@@ -516,11 +672,17 @@ function setupProfiles() {
     onCalculate();
   });
 
-  deleteBtn.addEventListener("click", () => {
+  deleteBtn.addEventListener("click", async () => {
     const selectedName = select.value;
     if (!selectedName) return;
 
-    const confirmed = confirm(`Delete profile "${selectedName}"?`);
+    const confirmed = await openDialogModal({
+      title: "Delete Profile",
+      message: `Delete saved profile "${selectedName}"?`,
+      confirmText: "Delete profile",
+      danger: true,
+      fallback: () => confirm(`Delete profile "${selectedName}"?`)
+    });
     if (!confirmed) return;
 
     const profiles = loadProfiles();
@@ -529,7 +691,7 @@ function setupProfiles() {
     delete profiles[selectedName];
 
     if (!saveProfiles(profiles)) {
-      alert("Could not delete profile.");
+      setText("localDataStatus", "Could not delete profile.");
       return;
     }
 
@@ -606,6 +768,122 @@ function formatParsedTime(timeSeconds) {
   return `${hours}h ${minutes}m`;
 }
 
+function isSupportedSlicerFile(name = "") {
+  const lower = (name || "").toLowerCase().trim();
+  return GCODE.isGcodeFilename(lower) || lower.endsWith(".3mf");
+}
+
+async function detectSlicerFromFile(file) {
+  const lowerName = (file?.name || "").toLowerCase();
+  if (lowerName.endsWith(".3mf")) return "3MF Project";
+  try {
+    const headChunk = await file.slice(0, 16384).text();
+    const tailStart = Math.max(0, Number(file.size || 0) - 16384);
+    const tailChunk = tailStart > 0 ? await file.slice(tailStart, file.size).text() : "";
+    const sample = `${headChunk}\n${tailChunk}`;
+    if (/BambuStudio|Bambu Studio/i.test(sample)) return "Bambu Studio";
+    if (/OrcaSlicer/i.test(sample)) return "OrcaSlicer";
+    if (/PrusaSlicer/i.test(sample)) return "PrusaSlicer";
+    if (/SuperSlicer/i.test(sample)) return "SuperSlicer";
+    if (/Cura_SteamEngine|UltiMaker Cura|FLAVOR:Marlin/i.test(sample)) return "Cura";
+  } catch (err) {
+    // Ignore slicer sniffing failure.
+  }
+  return "G-code";
+}
+
+async function parse3mfFile(file) {
+  const buffer = await file.arrayBuffer();
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const decoder = new TextDecoder("utf-8");
+  const extractedTexts = [];
+
+  let offset = 0;
+  while (offset + 30 <= buffer.byteLength) {
+    if (view.getUint32(offset, true) !== 0x04034b50) break;
+    const flags = view.getUint16(offset + 6, true);
+    if ((flags & 0x08) !== 0) break;
+    const compression = view.getUint16(offset + 8, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    const nameLen = view.getUint16(offset + 26, true);
+    const extraLen = view.getUint16(offset + 28, true);
+    const entryName = decoder.decode(bytes.subarray(offset + 30, offset + 30 + nameLen));
+    const dataStart = offset + 30 + nameLen + extraLen;
+    const dataEnd = dataStart + compressedSize;
+    if (dataEnd > buffer.byteLength) break;
+
+    if (/(slice_info\.config|Slic3r_pe\.config|\.gcode)$/i.test(entryName) && compressedSize > 0) {
+      const slice = bytes.subarray(dataStart, dataEnd);
+      if (compression === 0) {
+        extractedTexts.push(decoder.decode(slice));
+      } else if (compression === 8 && typeof DecompressionStream !== "undefined") {
+        const stream = new Blob([slice]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        extractedTexts.push(await new Response(stream).text());
+      }
+    }
+    offset = dataEnd;
+  }
+
+  const combined = extractedTexts.join("\n");
+  const parsed = GCODE.parseSlicerMetadata(combined);
+
+  if (parsed.timeSeconds == null) {
+    const predMatch = combined.match(/key="prediction"\s+value="(\d+(?:\.\d+)?)"/i);
+    if (predMatch) parsed.timeSeconds = Number(predMatch[1]);
+  }
+  if (parsed.filamentGrams == null) {
+    const weights = [];
+    const weightRegex = /\bused_g="(\d+(?:\.\d+)?)"/gi;
+    let m;
+    while ((m = weightRegex.exec(combined)) !== null) {
+      weights.push(Number(m[1]));
+    }
+    if (weights.length > 0) {
+      parsed.filamentGrams = weights.reduce((a, b) => a + b, 0);
+      parsed.filamentWeightSource = "slicer";
+    }
+  }
+  if (parsed.filamentMm == null) {
+    const lengthsM = [];
+    const lenRegex = /\bused_m="(\d+(?:\.\d+)?)"/gi;
+    let m;
+    while ((m = lenRegex.exec(combined)) !== null) {
+      lengthsM.push(Number(m[1]) * 1000);
+    }
+    if (lengthsM.length > 0) {
+      parsed.filamentMm = lengthsM.reduce((a, b) => a + b, 0);
+    }
+  }
+
+  return {
+    ...parsed,
+    printTimeHours: parsed.timeSeconds != null ? parsed.timeSeconds / 3600 : null,
+    scanLimited: false
+  };
+}
+
+function updateGcodeLoadedBadge({ grams = null } = {}) {
+  const badge = $("gcodeLoadedBadge");
+  if (!badge) return;
+
+  const parsedTime = formatParsedTime(importedTimeSeconds);
+  const stats = [];
+  if (parsedTime) stats.push(parsedTime);
+  if (Number.isFinite(grams)) stats.push(`${grams.toFixed(1)} g`);
+  else if (Number.isFinite(importedFilamentLengthMm)) stats.push(`${(importedFilamentLengthMm / 1000).toFixed(2)} m`);
+
+  if (!importedFileName || stats.length === 0) {
+    badge.hidden = true;
+    return;
+  }
+
+  setText("gcodeBadgeSlicer", importedSlicerName || "G-code");
+  setText("gcodeBadgeFilename", importedFileName);
+  setText("gcodeBadgeStats", stats.join(" • "));
+  badge.hidden = false;
+}
+
 function setGcodeImportStatus({ grams = null, source = null, keptManualValue = false, scanLimited = false } = {}) {
   const parts = [];
   const parsedTime = formatParsedTime(importedTimeSeconds);
@@ -619,6 +897,8 @@ function setGcodeImportStatus({ grams = null, source = null, keptManualValue = f
   } else if (Number.isFinite(importedFilamentLengthMm)) {
     parts.push(`${importedFilamentLengthMm.toFixed(1)}mm filament length`);
   }
+
+  updateGcodeLoadedBadge({ grams });
 
   if (parts.length === 0) {
     const scope = scanLimited ? " in the sampled beginning or end" : "";
@@ -664,23 +944,62 @@ function updateEstimatedFilamentFromImportedLength({ updateCalculation = true } 
   return grams;
 }
 
+function clearGcodeImport() {
+  importedTimeSeconds = null;
+  importedFilamentLengthMm = null;
+  importedFilamentWeightSource = null;
+  importedFileName = null;
+  importedSlicerName = null;
+  timeFromGcode = false;
+  filamentFromGcode = false;
+
+  const fileInput = $("gcodeFile");
+  if (fileInput) fileInput.value = "";
+
+  const badge = $("gcodeLoadedBadge");
+  if (badge) badge.hidden = true;
+
+  const timeInput = $("printTimeHours");
+  const filamentInput = $("filamentUsedGrams");
+  if (timeInput) {
+    timeInput.value = "";
+    persistFieldValue("printTimeHours");
+  }
+  if (filamentInput) {
+    filamentInput.value = "";
+    persistFieldValue("filamentUsedGrams");
+  }
+
+  setText("gcodeStatus", "Cleared imported slicer metadata.");
+  onCalculate();
+}
+
 function validateAndParseGcode(file) {
   const importSequence = ++gcodeImportSequence;
-  if (!GCODE.isGcodeFilename(file?.name)) {
-    setText("gcodeStatus", "Please upload a valid G-code file (.gcode, .gco, .g).");
+  const fileInput = $("gcodeFile");
+  if (fileInput) fileInput.value = "";
+
+  if (!isSupportedSlicerFile(file?.name)) {
+    setText("gcodeStatus", "Please upload a valid G-code (.gcode, .gco, .g) or .3mf file.");
     return;
   }
 
   setText("gcodeStatus", "Parsing G-code…");
 
-  GCODE.parseFile(file).then(({
-    timeSeconds,
-    printTimeHours,
-    filamentGrams,
-    filamentMm,
-    filamentWeightSource,
-    scanLimited
-  }) => {
+  const is3mf = (file?.name || "").toLowerCase().endsWith(".3mf");
+  const parsePromise = is3mf ? parse3mfFile(file) : GCODE.parseFile(file);
+
+  Promise.all([parsePromise, detectSlicerFromFile(file)]).then(([
+    {
+      timeSeconds,
+      printTimeHours,
+      filamentGrams,
+      filamentMm,
+      filamentWeightSource,
+      scanLimited
+    },
+    slicerName
+  ]) => {
     if (importSequence !== gcodeImportSequence) return;
     let didUpdate = false;
     const timeInput = $("printTimeHours");
@@ -693,6 +1012,8 @@ function validateAndParseGcode(file) {
     let parsedFilamentGrams = Number.isFinite(filamentGrams) ? filamentGrams : null;
     importedTimeSeconds = parsedTimeSeconds;
     importedFilamentLengthMm = Number.isFinite(filamentMm) ? filamentMm : null;
+    importedFileName = file?.name || "Uploaded file";
+    importedSlicerName = slicerName;
 
     if (canSetTime && printTimeHours != null && !Number.isNaN(printTimeHours)) {
       timeInput.value = Number(printTimeHours.toFixed(2));
@@ -746,11 +1067,55 @@ function validateAndParseGcode(file) {
 }
 
 function setupGcodeUpload() {
-  $("gcodeFile").addEventListener("change", (e) => {
+  const fileInput = $("gcodeFile");
+  const dropzone = $("gcodeDropzone");
+
+  fileInput?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     validateAndParseGcode(file);
   });
+
+  if (dropzone && fileInput) {
+    dropzone.addEventListener("click", (e) => {
+      if (e.target === fileInput) return;
+      fileInput.click();
+    });
+
+    dropzone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("drag-active");
+      });
+    });
+
+    ["dragleave", "dragend"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("drag-active");
+      });
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove("drag-active");
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      validateAndParseGcode(file);
+    });
+  }
+
+  $("btnClearGcode")?.addEventListener("click", clearGcodeImport);
 
   $("printTimeHours").addEventListener("input", () => {
     timeFromGcode = false;
@@ -871,6 +1236,7 @@ function clearOutputs() {
   latestCalculationResult = null;
   setText("outTotalEUR", "—");
   setText("outTotalUSD", "—");
+  setText("outUnitPill", "€ — / unit");
   setText("fxStatus", "");
   setText("outMinPriceNote", "");
 
@@ -913,6 +1279,7 @@ function clearOutputs() {
 }
 
 function setBreakdownOutputsEUR(breakdown) {
+  setText("outUnitPill", `€ ${fmtMoney(breakdown.effectiveUnitPrice)} / unit`);
   setText("outFilamentCost", `€ ${fmtMoney(breakdown.filamentCostTotal)}`);
   setText("outEnergyKwh", `${fmtMoney(breakdown.energyKwhTotal)} kWh`);
   setText("outElectricityCost", `€ ${fmtMoney(breakdown.electricityCostTotal)}`);
@@ -979,7 +1346,7 @@ function showDonateNoteBriefly() {
 
 // EUR is the base currency. USD conversion uses only the locally entered manual rate.
 function onCalculate(options = {}) {
-  const { showValidation = false } = options;
+  const { showValidation = false, silent = false } = options;
   $("fxStatus").textContent = "";
   $("outMinPriceNote").textContent = "";
   $("psMinPriceNote").textContent = "";
@@ -1008,7 +1375,9 @@ function onCalculate(options = {}) {
 
   animateMoneyText("outTotalEUR", "€ ", displayedTotalEUR);
   setBreakdownOutputsEUR(breakdown);
-  showDonateNoteBriefly();
+  if (!silent) {
+    showDonateNoteBriefly();
+  }
   if (minimumApplied) {
     $("outMinPriceNote").textContent = "Applied minimum order price";
     $("psMinPriceNote").textContent = "Applied minimum order price";
@@ -1031,34 +1400,35 @@ function onCalculate(options = {}) {
 }
 
 function setupLiveCalculate() {
-  let timer = null;
-
-  const debouncedCalculate = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      onCalculate();
-    }, 200);
+  const handleInstantCalculate = (e) => {
+    const target = e.target;
+    if (!target || target.id === "gcodeFile" || target.id === "profileSelect") return;
+    if (target.type === "number") {
+      target.dataset.validationTouched = "true";
+    }
+    onCalculate({ silent: true });
   };
 
-  document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener("input", () => {
-      input.dataset.validationTouched = "true";
-      validateForm();
-      debouncedCalculate();
-    });
+  document.querySelectorAll(".form-column input, .form-column select, .form-column textarea").forEach((control) => {
+    if (control.id === "gcodeFile" || control.id === "profileSelect") return;
+    control.addEventListener("input", handleInstantCalculate);
+    control.addEventListener("change", handleInstantCalculate);
   });
-
-  $("printerType").addEventListener("change", debouncedCalculate);
 }
 
-function onExportPdf() {
+async function onExportPdf() {
   const quoteDateValidation = validateQuoteDates({ showErrors: true });
   if (!quoteDateValidation.valid) {
     $("quoteValidUntil")?.focus();
     return;
   }
   if (!latestCalculationResult) {
-    const proceed = confirm("You haven't calculated a total yet. Export anyway?");
+    const proceed = await openDialogModal({
+      title: "Export Uncalculated Quote?",
+      message: "You haven't calculated a total yet. Export the quote PDF anyway?",
+      confirmText: "Export anyway",
+      fallback: () => confirm("You haven't calculated a total yet. Export anyway?")
+    });
     if (!proceed) return;
   }
 
@@ -1096,10 +1466,15 @@ function onExportPdf() {
 
 function buildQuoteSummaryText() {
   const timestamp = new Date().toLocaleString();
-  const totalEUR = $("outTotalEUR")?.textContent?.trim() || "—";
-  const totalUSD = $("outTotalUSD")?.textContent?.trim() || "—";
-  const quantity = $("outQuantity")?.textContent?.trim() || "";
-  const grandTotal = $("outGrandTotal")?.textContent?.trim() || "";
+  const calc = latestCalculationResult;
+  const fxRate = Number($("usdPerEur")?.value);
+  const convertedUsd = calc ? PRICING.convertEurToUsd(calc.displayedTotalEUR, fxRate) : null;
+
+  const totalEUR = calc ? `€ ${fmtMoney(calc.displayedTotalEUR)}` : "—";
+  const totalUSD = Number.isFinite(convertedUsd) ? `$ ${fmtMoney(convertedUsd)}` : "—";
+  const unitPriceEUR = calc ? `€ ${fmtMoney(calc.effectiveUnitPrice)}` : "";
+  const quantity = calc ? String(calc.quantity) : ($("quantity")?.value?.trim() || "");
+  const grandTotal = calc ? `€ ${fmtMoney(calc.displayedTotalEUR)}` : "";
   const printer = $("printerType")?.selectedOptions?.[0]?.textContent?.trim() || "";
   const filamentG = $("filamentUsedGrams")?.value?.trim() || "";
   const printTimeH = $("printTimeHours")?.value?.trim() || "";
@@ -1113,6 +1488,9 @@ function buildQuoteSummaryText() {
     `Converted total (USD): ${totalUSD}`
   ];
 
+  if (unitPriceEUR) {
+    lines.push(`Effective unit price (EUR): ${unitPriceEUR}`);
+  }
   if (quantity && quantity !== "—") {
     lines.push(`Quantity: ${quantity}`);
   }
@@ -1194,6 +1572,7 @@ function setupCalculate() {
 }
 
 function boot() {
+  setupTheme();
   populatePrinters();
   setupPrinterChange();
   populateMaterials();
@@ -1207,7 +1586,7 @@ function boot() {
   setupPersistence();
   restorePersistedFields();
   setDefaultQuoteDate();
-  onCalculate();
+  onCalculate({ silent: true });
 }
 
 document.addEventListener("DOMContentLoaded", boot);
