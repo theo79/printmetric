@@ -11,20 +11,22 @@
   <meta property="og:url" content="https://theo79.github.io/printmetric/" />
   <meta property="og:image" content="https://theo79.github.io/printmetric/logo.png" />
   <meta property="og:image:alt" content="PrintMetric logo" />
-  <link rel="icon" href="logo.png" type="image/png" />
-  <link rel="preload" href="logo.png" as="image" />
+  <link rel="icon" type="image/png" href="assets/logo-horizontal.png" />
+  <link rel="preload" href="assets/logo-horizontal.png" as="image" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="accent-line" aria-hidden="true"></div>
 
   <header class="app-header">
+    <h1 class="sr-only">PrintMetric 3D printing cost calculator</h1>
     <div class="navbar">
       <div class="navbar-brand">
-        <img id="appLogo" class="brand-logo" src="logo.png" alt="PrintMetric logo" />
+        <a href="./" class="nav-brand-link">
+          <img src="assets/logo-horizontal.png" alt="PrintMetric" class="nav-logo" />
+        </a>
         <div class="brand-text">
           <div class="brand-title-row">
-            <h1 class="brand-title">PrintMetric</h1>
             <span class="tagline">True 3D Print Cost Estimator</span>
           </div>
           <p class="brand-subtitle">Know your real print cost. Local-first &amp; private.</p>
