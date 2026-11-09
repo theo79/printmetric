@@ -1,6 +1,31 @@
 # PrintMetric
 
 ### Know your real print cost.
+<div align="center">
+
+# PrintMetric ⚡
+**Know your real 3D print cost. Local-first, private, and zero dependencies.**
+
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-blue.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/theo79/printmetric.svg?style=social)](https://github.com/theo79/printmetric)
+
+[Live Demo](https://theo79.github.io/printmetric/) · [Report Bug](https://github.com/theo79/printmetric/issues) · [Request Feature](https://github.com/theo79/printmetric/issues)
+
+</div>
+
+---
+
+### Why PrintMetric?
+
+Most 3D printing calculators only look at filament weight. **PrintMetric** accounts for the full economics of additive manufacturing:
+- ⚡ **True Energy Consumption:** Computes electricity based on printer wattage and exact print duration.
+- 📉 **Machine Depreciation:** Accounts for bed/nozzle wear, maintenance, and hardware amortization.
+- ⏱️ **Hands-on Labor:** Splits one-time pre-flight/slicing setup from per-unit post-processing.
+- 📦 **Automated Slicer Import:** Drag & drop `.gcode` or `.3mf` files (Bambu Studio, PrusaSlicer, OrcaSlicer, Cura) for instant parameter extraction.
+- 📄 **Client-Ready Quotes:** Live sticky pricing sidebar with one-click branded PDF quotation export.
+- 🔒 **100% Private & Local:** Runs completely inside your browser using Vanilla JS. No servers, no tracking, no logins.
 
 PrintMetric is a lightweight, browser-based tool for calculating the real cost of a 3D print.
 
