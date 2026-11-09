@@ -1,10 +1,11 @@
-
 <div align="center">
+
+<img src="assets/logo.png" alt="PrintMetric Banner" width="750" style="border-radius: 12px; margin-bottom: 1.25rem;" />
 
 # PrintMetric ⚡
 **Know your real 3D print cost. Local-first, private, and zero dependencies.**
 
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+[![Deploy](https://github.com/theo79/printmetric/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/theo79/printmetric/actions)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-blue.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/theo79/printmetric.svg?style=social)](https://github.com/theo79/printmetric)
