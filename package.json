@@ -2,6 +2,7 @@
   "name": "printmetric",
   "private": true,
   "scripts": {
+    "build": "node scripts/bundle-single-file.js",
     "test": "node --test"
   }
 }
