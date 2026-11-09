@@ -10,60 +10,50 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/theo79/printmetric.svg?style=social)](https://github.com/theo79/printmetric)
 
-[Live Web App](https://theo79.github.io/printmetric/) · [Report Bug](https://github.com/theo79/printmetric/issues) · [Request Feature](https://github.com/theo79/printmetric/issues)
+[Live Web App](https://theo79.github.io/printmetric/) · [Download Offline Version](https://github.com/theo79/printmetric/releases) · [Report Bug](https://github.com/theo79/printmetric/issues)
+
 
 </div>
 
 ---
 
-### Why PrintMetric?
+### 💡 Why PrintMetric?
 
 Most 3D printing calculators only account for raw spool weight. **PrintMetric** captures the true operational economics of additive manufacturing:
 
-* ⚡ **True Energy Consumption:** Computes electricity based on printer wattage and exact print duration.
-* 📉 **Machine Depreciation:** Accounts for nozzle wear, bed degradation, and maintenance amortization.
-* ⏱️ **Hands-on Labor:** Cleanly separates one-off prep/slicing setup from per-unit finishing and post-processing.
-* 📦 **Slicer Metadata Dropzone:** Drag & drop `.gcode` or `.3mf` files (Bambu Studio, OrcaSlicer, PrusaSlicer, Cura) for automatic parameter extraction.
-* 📊 **Two-Column Sticky Dashboard:** Live order total and detailed breakdowns remain permanently pinned as you scroll through inputs.
-* 📄 **Client-Ready PDF Quotes:** Generate clean, branded quotation sheets with one click without exposing your internal margins.
-* 🔒 **100% Private & Local-First:** Runs entirely in your browser using Vanilla JS. No tracking, no backend, no logins, and full offline capability.
+* **True Energy Consumption:** Computes electricity based on printer wattage and exact print duration.
+* **Machine Depreciation:** Accounts for nozzle wear, bed degradation, and maintenance amortization.
+* **Hands-on Labor:** Cleanly separates one-off prep/slicing setup from per-unit finishing and post-processing.
+* **Slicer Metadata Dropzone:** Drag & drop `.gcode` or `.3mf` files (Bambu Studio, OrcaSlicer, PrusaSlicer, Cura) for automatic parameter extraction.
+* **Two-Column Sticky Dashboard:** Live order total and detailed breakdowns remain permanently pinned as you scroll through inputs.
+* **Client-Ready PDF Quotes:** Generate clean, branded quotation sheets with one click without exposing your internal margins.
+* **100% Private & Local-First:** Runs entirely in your browser using Vanilla JS. No tracking, no backend, no logins, and full offline capability.
 
 ---
 
-## Try PrintMetric
+## How to Run PrintMetric
 
-### 1. Online (Instant Browser Access)
-**[https://theo79.github.io/printmetric/](https://theo79.github.io/printmetric/)**  
-Zero installation required. Works on any modern desktop, tablet, or mobile browser.
+### Option 1: Run Online (Zero Setup)
+Open **[https://theo79.github.io/printmetric/](https://theo79.github.io/printmetric/)** in any browser.
 
-### 2. Standalone Single-File (Offline Version)
-Download the standalone `PrintMetric-standalone.html` file from the [latest GitHub Release](https://github.com/theo79/printmetric/releases).  
-Double-click to launch in any browser—no internet connection, web server, or Node runtime required.
-
----
-
-## ⚙️ How It Works
-
-### 1. Live Sticky Estimation
-As you change printer models, filament prices, or job parameters, the sticky **Order Total** card updates in real time. It features:
-* Real-time EUR calculation with converted USD equivalent (using your manual exchange rate).
-* Calculated effective price per unit (`€ / unit`).
-* An expandable **Cost Breakdown** tree detailing exact material, energy, labor, machine wear, and margin components.
-
-### 2. Slicer Metadata Import (`.gcode` & `.3mf`)
-Simply drag and drop your exported sliced file directly into the upload card:
-* **Automatic extraction:** Instantly parses print time, filament length, and slicer-reported filament weight.
-* **Smart density fallback:** If only filament length is embedded, PrintMetric derives the weight using your material density and diameter settings.
-* **Safe memory inspection:** Large files are read via bounded chunks (`Blob.slice()`) without loading entire gigabyte files into RAM.
-* **Multi-slicer support:** Compatible with metadata from Bambu Studio, OrcaSlicer, PrusaSlicer, SuperSlicer, and Cura.
-
-### 3. Built-In Presets
-* **Printer Presets:** Pre-configured average power draw (W) for popular printers (Bambu Lab, Prusa, Creality, Elegoo, Anycubic, Artillery, and Custom).
-* **Material Density Presets:** Quick densities for PLA, PETG, ABS, ASA, TPU, Nylon (PA), PC, or custom spools.
+### Option 2: Download the Single-File Offline App
+1. Go to the [Releases page](https://github.com/theo79/printmetric/releases).
+2. Download **`PrintMetric-standalone.html`**.
+3. Double-click the file to open it in Chrome, Firefox, Edge, or Safari. It runs completely offline with all styles, icons, and calculation logic embedded into one file.
 
 ---
 
-## Pricing & Costing Engine
+## ⚙️ Core Features
+
+* **Instant Live Calculation:** Form updates reactively recalculate unit pricing, order totals, and cost distributions in real time.
+* **G-code & 3MF Header Parsing:** Bounded chunk reads safely parse slicer parameters from multi-gigabyte files without overloading memory.
+* **Hardware & Material Presets:** Built-in power ratings for Bambu Lab, Prusa, Creality, Elegoo, Anycubic, and Artillery, alongside density presets for PLA, PETG, ABS, ASA, TPU, Nylon, and PC.
+* **Client-Safe PDF Invoices:** Built-in print stylesheets output professional customer quotes while hiding internal labor rates and markup percentages.
+* **Browser Profile Persistence:** Save and swap distinct machine, pricing, and shop setups via `localStorage`.
+
+---
+
+## 📐 Pricing Engine Formulas
 
 PrintMetric calculates all base figures in EUR using double-precision floating point:
 
@@ -79,7 +69,7 @@ $$\text{Order Total} = \max\left(\text{Adjusted Cost} \times \left(1 + \frac{\te
 
 ---
 
-## Privacy-Preserving Customer Quote PDF
+## 📄 Privacy-Preserving Customer Quote PDF
 
 Clicking **Customer Quote PDF** generates an A4-ready, printable quote:
 
@@ -94,7 +84,7 @@ Clicking **Customer Quote PDF** generates an A4-ready, printable quote:
 
 ---
 
-## Local Storage & Profiles
+## 💾 Local Storage & Profiles
 
 PrintMetric saves your workspace automatically to browser `localStorage`:
 * **State Persistence:** Form values, seller headers, and exchange rates persist across reloads.
@@ -103,20 +93,32 @@ PrintMetric saves your workspace automatically to browser `localStorage`:
 
 ---
 
-## Tech Stack & Development
+## 
+Tech Stack & Tests
 
 * **Frontend:** Plain Semantic HTML5, Modern CSS Grid/Flexbox (with full Light/Dark mode support), and Vanilla JavaScript (ES6+).
 * **Testing:** Automated tests run on Node.js native test runner (`node:test`, `node:assert/strict`).
 * **Dependencies:** Exactly **0** runtime dependencies.
 
 ### Running Tests Locally
+
 ```bash
 node --test
-Generate the single-file offline bundle:
+```
+
+### Building the Standalone File
 
 ```bash
 node scripts/bundle-single-file.js
+```
 
-Author
-Built by Theocharis Anastopoulos
-GitHub Profile
+---
+
+If PrintMetric saved you time, prevented a misquoted print order, or helped your workshop:
+
+* **Star the repository** on GitHub to help other makers discover it.
+* **[Buy me a coffee on Ko-fi](https://ko-fi.com/theo79)** to support ongoing development and maintenance.
+
+## Author
+
+Built by **Theocharis Anastopoulos** · [GitHub Profile](https://github.com/theo79)
